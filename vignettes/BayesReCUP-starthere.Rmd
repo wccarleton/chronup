@@ -1,0 +1,58 @@
+---
+title: "BayesReCUP-starthere"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{BayesReCUP-starthere}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(BayesReCUP)
+library(clam)
+library(parallel)
+library(bigmemory)
+```
+
+To begin, simulate some data:
+
+```{r}
+nintervals <- 1000
+times <- 5000:4001
+beta <- 0.004
+process <- exp(1:nintervals * beta)
+simseqs <- simulateEventCounts(
+                    process = process,
+                    times = times,
+                    nevents = 1000,
+                    nsamples = 100,
+                    bigmatrix = F)
+
+Y <- simseqs$Y
+n <- dim(Y)[1]
+x <- c(rep(1, n),1:n)
+X <- matrix(
+        rep(x, 100, each = T),
+        nrow = n)
+```
+
+Then, call the mcmc:
+
+```{r}
+startvals <- c(0,0,rep(0.5,n))
+nparams <- length(startvals)
+startscales <- c(0.01, 0.001, rep(0.05, nparams - 2))
+
+mcmc_samples_adapt <- nbReCUP(
+                            Y = Y,
+                            X = X,
+                            startvals = startvals,
+                            scales = startscales)
+```

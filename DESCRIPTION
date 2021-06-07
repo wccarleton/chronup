@@ -1,0 +1,33 @@
+Package: BayesReCUP
+Title: Bayesian Regression for Chronological Uncertainty Propagation
+    models
+Version: 0.0.0.9000
+Authors@R:
+    person(given = "W. Christopher",
+           family = "Carleton",
+           role = c("aut", "cre"),
+           email = "ccarleton@protonmail.com",
+           comment = c(ORCID = "0000-0001-7463-8638"))
+URL: https://wccarleton.me
+Description: A collection of Bayesian models and helpful data simulation tools
+    intended for analyzing data that contain chronological uncertainty. These
+    tools are primarily built for use by Palaeo Scientists (e.g.,
+    archaeologists, palaeoclimatologists, palaeontologists, etc.), but they may
+    be of use to data scientists in any field where significant measurement
+    uncertainties are common in both dependent and independent variables.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.1.1
+Suggests:
+    bigmemory,
+    clam,
+    knitr,
+    parallel,
+    rmarkdown
+Depends:
+    truncnorm,
+    progress,
+    pbapply
+VignetteBuilder: knitr
