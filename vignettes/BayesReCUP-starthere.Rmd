@@ -25,18 +25,20 @@ nintervals <- 1000
 times <- 5000:4001
 beta <- 0.004
 process <- exp(1:nintervals * beta)
+nevents <- 1000
+nsamples <- 1000
 simseqs <- simulateEventCounts(
                     process = process,
                     times = times,
-                    nevents = 1000,
-                    nsamples = 100,
+                    nevents = nevents,
+                    nsamples = nsamples,
                     bigmatrix = F)
 
 Y <- simseqs$Y
 n <- dim(Y)[1]
 x <- c(rep(1, n),1:n)
 X <- matrix(
-        rep(x, 100, each = T),
+        rep(x, nsamples, each = T),
         nrow = n)
 ```
 
