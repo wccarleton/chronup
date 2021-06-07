@@ -16,9 +16,6 @@ knitr::opts_chunk$set(
 
 ```{r setup}
 library(BayesReCUP)
-library(clam)
-library(parallel)
-library(bigmemory)
 ```
 
 To begin, simulate some data:

@@ -162,12 +162,11 @@ simulateEventCounts <- function(
     message("Simulating event count sequences.")
 
     if(parallel & bigmatrix){
-        cl <- parallel::makeCluster(detectCores() - 1)
+        ncores <- parallel::detectCores()
+        cl <- parallel::makeCluster(ncores - 1)
         parallel::clusterEvalQ(cl,{
-                            library(devtools)
-                            library(bigmemory)
                             wd <- getwd()
-                            load_all()
+                            devtools::load_all()
                             })
         pbapply::pbsapply(
                     cl = cl,
@@ -182,11 +181,11 @@ simulateEventCounts <- function(
                 Y = paste(wd,"Y_desc",sep=""),
                 counts = true_event_counts))
     }else if(parallel & !bigmatrix){
-        cl <- makeCluster(detectCores() - 1)
+        ncores <- parallel::detectCores()
+        cl <- parallel::makeCluster(ncores - 1)
         parallel::clusterEvalQ(cl,{
-                            library(devtools)
                             wd <- getwd()
-                            load_all()
+                            devtools::load_all()
                             })
         Y <- pbapply::pbsapply(
                             cl = cl,
