@@ -40,21 +40,27 @@ simulateEventCounts <- function(
 
     #check user options for required packages
     #big memory
-    bigmemory_installed <- requireNamespace("bigmemory", quietly = TRUE)
-    if(bigmatrix & !bigmemory_installed){
-        stop("package 'bigmemory' is required if bigmatrix = T")
+    if(bigmatrix){
+        bigmemory_installed <- requireNamespace("bigmemory", quietly = TRUE)
+        if(!bigmemory_installed){
+            stop("package 'bigmemory' is required if bigmatrix = T")
+        }
     }
 
     #parallel
-    parallel_installed <- requireNamespace("parallel", quietly = TRUE)
-    if(parallel & !parallel_installed){
-        stop("package 'parallel' is required if parallel = T")
+    if(parallel){
+        parallel_installed <- requireNamespace("parallel", quietly = TRUE)
+        if(!parallel_installed){
+            stop("package 'parallel' is required if parallel = T")
+        }
     }
 
     #clam, for c14 calibration
-    clam_installed <- requireNamespace("clam", quietly = TRUE)
-    if(c14 & !clam_installed){
-        stop("package 'clam' is required if c14 = T")
+    if(c14){
+        clam_installed <- requireNamespace("clam", quietly = TRUE)
+        if(!clam_installed){
+            stop("package 'clam' is required if c14 = T")
+        }
     }
 
     #check timescale and issue warning
