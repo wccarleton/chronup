@@ -25,7 +25,6 @@
 #'  like `apply()` or 'parApply()', this function will return a matrix. If the
 #'  `bigmemory` argument is not NULL, this function will return nothing and
 #'  instead write the output to the relevant big matrix file.
-#' @export
 
 sampleEventCounts <- function(
                         x = NULL,
@@ -38,7 +37,7 @@ sampleEventCounts <- function(
     count_sample <- countEvents(times_sample, breaks, BP)
     if(!is.null(bigmatrix)){
         if(requireNamespace("bigmemory", quietly = TRUE)){
-            m <- attach.big.matrix(bigmatrix)
+            m <- bigmemory::attach.big.matrix(bigmatrix)
             m[,x] <- count_sample
             return()
         }else{

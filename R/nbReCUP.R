@@ -38,7 +38,6 @@
 #'  acceptance rates for all model parameters, and the proposal function scales
 #'  for all parameters.
 #' @import pbapply progress truncnorm stats utils
-#' @export
 
 nbReCUP <- function(
                     Y,

@@ -24,7 +24,6 @@
 #'  '(or a file path pointing to a file-backed bigmatrix); 2) a dataframe
 #'  containing the true (chronological-error-free) event-count sample.
 #' @import pbapply graphics
-#' @export
 
 simulateEventCounts <- function(
                             process,
@@ -102,16 +101,16 @@ simulateEventCounts <- function(
 
     if(c14){
         message("Simulating and calibrating c14 dates.")
-        simc14 <- t(sapply(event_times, calBP.14C))
+        simc14 <- t(sapply(event_times, clam::calBP.14C))
         c14post <- pblapply(
                 1:nevents,
                 function(x){
                     sink("./sink.txt")
-                    caldate <- calibrate(
-                                    simc14[x,1],
-                                    simc14[x,2],
-                                    graph = F,
-                                    BCAD = !BP)$calib
+                    caldate <- clam::calibrate(
+                                        simc14[x,1],
+                                        simc14[x,2],
+                                        graph = F,
+                                        BCAD = !BP)$calib
                     sink()
                     return(caldate)
                 })
@@ -152,7 +151,7 @@ simulateEventCounts <- function(
                     binning_resolution)
 
     if(bigmatrix){
-        Y <- filebacked.big.matrix(
+        Y <- bigmemory::filebacked.big.matrix(
                             nrow = new_span,
                             ncol = nsamples,
                             backingpath = wd,
@@ -163,52 +162,52 @@ simulateEventCounts <- function(
     message("Simulating event count sequences.")
 
     if(parallel & bigmatrix){
-        cl <- makeCluster(detectCores() - 1)
-        clusterEvalQ(cl,{
-                        library(devtools)
-                        library(bigmemory)
-                        wd <- getwd()
-                        load_all()
-                    })
-        pbsapply(
-            cl = cl,
-            X = 1:nsamples,
-            FUN = sampleEventCounts,
-            ceMatrix = ceMatrix,
-            times = new_times,
-            breaks = new_breaks,
-            bigmatrix = paste(wd,"Y_desc",sep=""))
-        stopCluster(cl)
-        return(list(
-                Y = paste(wd,"Y_desc",sep=""),
-                counts = true_event_counts))
-    }else if(parallel & !bigmatrix){
-        cl <- makeCluster(detectCores() - 1)
-        clusterEvalQ(cl,{
-                        library(devtools)
-                        wd <- getwd()
-                        load_all()
-                    })
-        Y <- pbsapply(
+        cl <- parallel::makeCluster(detectCores() - 1)
+        parallel::clusterEvalQ(cl,{
+                            library(devtools)
+                            library(bigmemory)
+                            wd <- getwd()
+                            load_all()
+                            })
+        pbapply::pbsapply(
                     cl = cl,
                     X = 1:nsamples,
                     FUN = sampleEventCounts,
                     ceMatrix = ceMatrix,
                     times = new_times,
                     breaks = new_breaks,
-                    bigmatrix = NULL)
-        stopCluster(cl)
+                    bigmatrix = paste(wd,"Y_desc",sep=""))
+        parallel::stopCluster(cl)
+        return(list(
+                Y = paste(wd,"Y_desc",sep=""),
+                counts = true_event_counts))
+    }else if(parallel & !bigmatrix){
+        cl <- makeCluster(detectCores() - 1)
+        parallel::clusterEvalQ(cl,{
+                            library(devtools)
+                            wd <- getwd()
+                            load_all()
+                            })
+        Y <- pbapply::pbsapply(
+                            cl = cl,
+                            X = 1:nsamples,
+                            FUN = sampleEventCounts,
+                            ceMatrix = ceMatrix,
+                            times = new_times,
+                            breaks = new_breaks,
+                            bigmatrix = NULL)
+        parallel::stopCluster(cl)
         return(list(
                 Y = Y,
                 counts = true_event_counts))
     }else if(!parallel & !bigmatrix){
-        Y <- pbsapply(
-                    X = 1:nsamples,
-                    FUN = sampleEventCounts,
-                    ceMatrix = ceMatrix,
-                    times = new_times,
-                    breaks = new_breaks,
-                    bigmatrix = NULL)
+        Y <- pbapply::pbsapply(
+                            X = 1:nsamples,
+                            FUN = sampleEventCounts,
+                            ceMatrix = ceMatrix,
+                            times = new_times,
+                            breaks = new_breaks,
+                            bigmatrix = NULL)
         return(list(
                 Y = Y,
                 counts = true_event_counts))

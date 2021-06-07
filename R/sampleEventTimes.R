@@ -16,7 +16,6 @@
 #'  like `apply()` or 'parApply()', this function will return a matrix. If the
 #'  `bigmemory` argument is not NULL, this function will return nothing and
 #'  instead write the output to the relevant big matrix file.
-#' @export
 
 sampleEventTimes <- function(
     x = NULL,
@@ -26,7 +25,7 @@ sampleEventTimes <- function(
     times_sample <- apply(ceMatrix,2,function(j)sample(times, size=1, prob=j))
     if(!is.null(bigmatrix)){
         if(requireNamespace("bigmemory", quietly = TRUE)){
-            m <- attach.big.matrix(bigmatrix)
+            m <- bigmemory::attach.big.matrix(bigmatrix)
             m[,x] <- times_sample
             return()
         }else{
