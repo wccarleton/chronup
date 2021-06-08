@@ -1,5 +1,5 @@
 ---
-title: "BayesReCUP-starthere"
+title: "Bayesian regression with chronological uncertainty propagation."
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{BayesReCUP-starthere}
@@ -26,15 +26,14 @@ times <- 5000:4001
 beta <- 0.004
 process <- exp(1:nintervals * beta)
 nevents <- 1000
-nsamples <- 100
-simseqs <- simulateEventCounts(
-                    process = process,
-                    times = times,
-                    nevents = nevents,
-                    nsamples = nsamples,
-                    bigmatrix = F)
+nsamples <- 100000
+simseqs <- simulateEventCounts(process = process,
+                            times = times,
+                            nevents = nevents,
+                            nsamples = nsamples,
+                            bigmatrix = T)
 
-Y <- simseqs$Y
+Y <- bigmemory::attach.big.matrix(simseqs$Y)
 n <- dim(Y)[1]
 x <- c(rep(1, n),1:n)
 X <- matrix(
@@ -45,13 +44,12 @@ X <- matrix(
 Then, call the mcmc:
 
 ```{r}
-startvals <- c(0,0,rep(0.5,n))
-nparams <- length(startvals)
-startscales <- c(0.01, 0.001, rep(0.05, nparams - 2))
+startvals <- c(0,0,rep(0.5, n))
+startscales <- c(0.01, 0.001, rep(0.05, n))
 
-mcmc_samples_adapt <- nbReCUP(
-                            Y = Y,
+mcmc_samples_adapt <- regress(Y = Y,
                             X = X,
+                            model = "nb",
                             startvals = startvals,
                             scales = startscales)
 ```

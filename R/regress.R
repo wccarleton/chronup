@@ -44,7 +44,7 @@
 regress <- function(Y,
                     X,
                     model = "nb",
-                    startvals,
+                    startvals = NULL,
                     niter = NULL,
                     adapt = T,
                     adapt_amount = 0.1,
@@ -52,16 +52,20 @@ regress <- function(Y,
                     adapt_window = c(0.21, 0.25),
                     scales = NA,
                     priors = NULL){
-    # Must check argument validity and set up some additional parameters
+    # Check argument validity and set up additional parameters
     if (!is.matrix(Y) | !is.matrix(X)){
         stop("Y and X must be matrices.")
     }
     if (!(model %in% c("nb", "pois"))){
-        stop("Invalid model. Must be one of 'nb', 'pois'.")
+        stop("Invalid model. Must be one of ('nb', 'pois').")
     }
     nX <- dim(X)[2] / dim(Y)[2]
     if ((nX %% 1) != 0){
-        stop("Y and X must have the same number of columns, or X must have an integer multiple of Y's number of columns.")
+        alert <- paste("Y and X must have the same number of columns, ",
+                        "or X must have an integer multiple of Y's ",
+                        "number of columns",
+                        sep = "")
+        stop(alert)
     }
     if (is.null(niter)){
         niter <- dim(Y)[2]
@@ -74,6 +78,19 @@ regress <- function(Y,
         nparams <- nX + N
     }else if (model == "pois"){
         nparams <- nX
+    }
+    # If the user hasn't provuded any starting values to initialize the mcmc,
+    # we can provide some (probably dumb) defaults.
+    if (is.null(startvals)){
+        alert <- paste("No starting values provided ('startvals == NULL').",
+                        "Using defaults.",
+                        sep = " ")
+        warning(alert)
+        if (model == "nb"){
+            startvals <- c(rep(0, nX), rep(0.5, N))
+        }else if (model == "pois"){
+            startvals <- rep(0, nX)
+        }
     }
     chain <- array(dim = c(niter + 1, nparams))
     chain[1,] <- startvals
@@ -89,7 +106,7 @@ regress <- function(Y,
         # adapt step
         if(adapt & (j %% adapt_interval == 0)){
             interval_index <- c(j - adapt_interval + 1):j
-            diffs <- apply(chain[interval_index, ],2,diff)
+            diffs <- apply(chain[interval_index, ], 2, diff)
             acceptance_rate <- 1 - colMeans(diffs == 0)
             acceptance[j / adapt_interval, ] <- acceptance_rate
             scales <- unlist(
@@ -105,30 +122,56 @@ regress <- function(Y,
             scales_matrix[j / adapt_interval, ] <- scales
         }
         # accept step for main regression params
-        proposal_regression <- c(
-                        propose_reg(chain[j, 1:nX], scales[1:nX]),
-                        chain[j, -c(1:nX)]
-                        )
+        proposal_regression <- c(propose_reg(chain[j, 1:nX], scales[1:nX]),
+                                chain[j, -c(1:nX)])
+        # X is a matrix representing uncertainty in the covariates, so we have
+        # to walk over that matrix during the MCMC as well.
         x_cols <- 1:nX + (nX * (j - 1))
-        pd_proposal <- posterior(Y[, j], X[, x_cols], proposal_regression, nX)
-        pd_previous <- posterior(Y[, j], X[, x_cols], chain[j, ], nX)
+        pd_proposal <- posterior(Y[, j],
+                                X[, x_cols],
+                                proposal_regression,
+                                nX,
+                                model,
+                                priors)
+        pd_previous <- posterior(Y[, j],
+                                X[, x_cols],
+                                chain[j, ],
+                                nX,
+                                model,
+                                priors)
         accept <- exp(pd_proposal - pd_previous)
         if (runif(1) < accept){
             chain[j + 1, ] <- proposal_regression
         }else{
             chain[j + 1, ] <- chain[j, ]
         }
-        # accept step for each p separately
-        for (l in 1:N){
-            proposal_p <- chain[j + 1, ]
-            proposal_p[nX + l] <- propose_p(chain[j, nX + l], scales[nX + l])
-            pd_proposal <- posterior(Y[, j], X[, x_cols], proposal_p, nX)
-            pd_previous <- posterior(Y[, j], X[, x_cols], chain[j + 1, ], nX)
-            accept <- exp(pd_proposal - pd_previous)
-            if(runif(1) < accept){
-                chain[j + 1, ] <- proposal_p
-            }else{
-                chain[j + 1, ] <- chain[j + 1, ]
+        # if the Negative-Binomial model is used, then we have to estimate a
+        # 'p' parameter for every 'y' observation (of which there will be N).
+        # Experience has shown that this should be handled in a Gibbs-step as
+        # follows.
+        if (model == "nb"){
+            for (l in 1:N){
+                proposal_p <- chain[j + 1, ]
+                proposal_p[nX + l] <- propose_p(chain[j, nX + l],
+                                                scales[nX + l])
+                pd_proposal <- posterior(Y[, j],
+                                        X[, x_cols],
+                                        proposal_p,
+                                        nX,
+                                        model,
+                                        priors)
+                pd_previous <- posterior(Y[, j],
+                                        X[, x_cols],
+                                        chain[j + 1, ],
+                                        nX,
+                                        model,
+                                        priors)
+                accept <- exp(pd_proposal - pd_previous)
+                if(runif(1) < accept){
+                    chain[j + 1, ] <- proposal_p
+                }else{
+                    chain[j + 1, ] <- chain[j + 1, ]
+                }
             }
         }
     }
@@ -143,33 +186,57 @@ regress <- function(Y,
     }
 }
 
-likelihood <- function(Y, X, params, nX){
-    pred <- exp(X %*% params[1:nX])
-    loglike <- dnbinom(x = Y, size = pred, prob = params[-c(1:nX)], log = T)
-    sll <- sum(loglike)
-    return(sll)
-}
-
-prior <- function(params, nX, priors = NULL){
-    if(is.null(priors)){
-        priors <- c(0, 1000, 1e-7, 1 - 1e-7)
+likelihood <- function(Y, X, params, nX, model){
+    if (model == "nb"){
+        pred <- exp(X %*% params[1:nX])
+        loglike <- dnbinom(x = Y,
+                        size = pred,
+                        prob = params[-c(1:nX)],
+                        log = T)
+        sll <- sum(loglike)
+    }else if (model == "pois"){
+        pred <- exp(X %*% params[1:nX])
+        loglike <- dpois(x = Y,
+                        lambda = pred,
+                        log = T)
+        sll <- sum(loglike)
     }
-    B_priors <- dnorm(
-                    x = params[1:nX],
-                    mean = priors[1],
-                    sd = priors[2],
-                    log = T)
-    p_priors <- dunif(
-                    x = params[-c(1:nX)],
-                    min = priors[3],
-                    max = priors[4],
-                    log = T)
-    sll <- sum(c(B_priors, p_priors))
     return(sll)
 }
 
-posterior <- function(Y, X, params, nX){
-    post <- likelihood(Y, X, params, nX) + prior(params, nX)
+prior <- function(params, nX, model, priors = NULL){
+    if (model == "nb"){
+        if(is.null(priors)){
+            priors <- c(0, 1000, 1e-7, 1 - 1e-7)
+        }
+        B_priors <- dnorm(
+                        x = params[1:nX],
+                        mean = priors[1],
+                        sd = priors[2],
+                        log = T)
+        p_priors <- dunif(
+                        x = params[-c(1:nX)],
+                        min = priors[3],
+                        max = priors[4],
+                        log = T)
+        sll <- sum(c(B_priors, p_priors))
+    }else if (model == "pois"){
+        if(is.null(priors)){
+            priors <- c(0, 1000)
+        }
+        B_priors <- dnorm(
+                        x = params[1:nX],
+                        mean = priors[1],
+                        sd = priors[2],
+                        log = T)
+        sll <- sum(B_priors)
+    }
+    return(sll)
+}
+
+posterior <- function(Y, X, params, nX, model, priors){
+    post <- likelihood(Y, X, params, nX, model) +
+            prior(params, nX, model, priors)
     return(post)
 }
 

@@ -123,13 +123,13 @@ simulateEventCounts <- function(
                                 )
                             )
         if(BP){
-            ceMatrix <- calSampleApprox(
+            ceMatrix <- approx_c14(
                     c14post,
                     sample_time_range[2],
                     sample_time_range[1],
                     resolution)
         }else{
-            ceMatrix <- calSampleApprox(
+            ceMatrix <- approx_c14(
                     c14post,
                     sample_time_range[1],
                     sample_time_range[2],
