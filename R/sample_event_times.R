@@ -5,7 +5,7 @@
 #'  vectorized or parallel function call (e.g., apply() or parApply()). If
 #'  you're not using a parallel apply function (e.g., parApply), ignore this
 #'  parameter.
-#' @param ceMatrix A matrix containing discrete estimates describing
+#' @param ce_matrix A matrix containing discrete estimates describing
 #'  chronological uncertainty. Each column should contain density estimates
 #'  for a single event and the rows should each refer to discrete times.
 #' @param times A vector of possible event times.
@@ -17,12 +17,11 @@
 #'  `bigmemory` argument is not NULL, this function will return nothing and
 #'  instead write the output to the relevant big matrix file.
 
-sample_event_times <- function(
-    x = NULL,
-    ceMatrix,
-    times,
-    bigmatrix = NULL){
-    times_sample <- apply(ceMatrix,2,function(j)sample(times, size=1, prob=j))
+sample_event_times <- function(x = NULL,
+                                ce_matrix,
+                                times,
+                                bigmatrix = NULL){
+    times_sample <- apply(ce_matrix,2,function(j)sample(times, size=1, prob=j))
     if(!is.null(bigmatrix)){
         if(requireNamespace("bigmemory", quietly = TRUE)){
             m <- bigmemory::attach.big.matrix(bigmatrix)

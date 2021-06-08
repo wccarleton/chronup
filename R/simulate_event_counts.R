@@ -12,7 +12,7 @@
 #' @param c14 Logical (default T). Are the events dated with radiocarbon? If
 #'  so, the R package 'clam' will be used to simulate c14 dates from the 'true'
 #'  samples of the 'times' vector and then calibrate those dates.
-#' @param ceMatrix A matrix containing discrete estimates describing
+#' @param ce_matrix A matrix containing discrete estimates describing
 #'  chronological uncertainty. Each column should contain density estimates
 #'  for a single event and the rows should each refer to discrete times. If c14
 #'  = F, then this matrix must be included.
@@ -33,7 +33,7 @@ simulate_event_counts <- function(
                             binning_resolution = -1,
                             BP = T,
                             c14 = T,
-                            ceMatrix = NULL,
+                            ce_matrix = NULL,
                             bigmatrix = T,
                             parallel = T){
 
@@ -68,8 +68,8 @@ simulate_event_counts <- function(
     }
 
     #check for chronological error matrix
-    if(!c14 & is.null(ceMatrix)){
-        stop("ceMatrix is required if c14 = F")
+    if(!c14 & is.null(ce_matrix)){
+        stop("ce_matrix is required if c14 = F")
     }
 
     #set some global parameters
@@ -123,13 +123,13 @@ simulate_event_counts <- function(
                                 )
                             )
         if(BP){
-            ceMatrix <- approx_c14(
+            ce_matrix <- approx_c14(
                     c14post,
                     sample_time_range[2],
                     sample_time_range[1],
                     resolution)
         }else{
-            ceMatrix <- approx_c14(
+            ce_matrix <- approx_c14(
                     c14post,
                     sample_time_range[1],
                     sample_time_range[2],
@@ -172,7 +172,7 @@ simulate_event_counts <- function(
                     cl = cl,
                     X = 1:nsamples,
                     FUN = sample_event_counts,
-                    ceMatrix = ceMatrix,
+                    ce_matrix = ce_matrix,
                     times = new_times,
                     breaks = new_breaks,
                     bigmatrix = paste(wd,"Y_desc",sep=""))
@@ -191,7 +191,7 @@ simulate_event_counts <- function(
                             cl = cl,
                             X = 1:nsamples,
                             FUN = sample_event_counts,
-                            ceMatrix = ceMatrix,
+                            ce_matrix = ce_matrix,
                             times = new_times,
                             breaks = new_breaks,
                             bigmatrix = NULL)
@@ -203,7 +203,7 @@ simulate_event_counts <- function(
         Y <- pbapply::pbsapply(
                             X = 1:nsamples,
                             FUN = sample_event_counts,
-                            ceMatrix = ceMatrix,
+                            ce_matrix = ce_matrix,
                             times = new_times,
                             breaks = new_breaks,
                             bigmatrix = NULL)
