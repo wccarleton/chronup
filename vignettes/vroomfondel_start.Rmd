@@ -27,7 +27,7 @@ beta <- 0.004
 process <- exp(1:nintervals * beta)
 nevents <- 1000
 nsamples <- 100000
-simseqs <- simulateEventCounts(process = process,
+simseqs <- simulate_event_counts(process = process,
                             times = times,
                             nevents = nevents,
                             nsamples = nsamples,
@@ -37,7 +37,6 @@ Y <- bigmemory::attach.big.matrix(simseqs$Y)
 n <- dim(Y)[1]
 x <- cbind(rep(1, n),1:n)
 
-<<<<<<< HEAD
 bigmemory::filebacked.big.matrix(nrow = n,
                                 ncol = nsamples * dim(x)[2],
                                 backingfile = "X_mat",
@@ -47,7 +46,7 @@ bigmemory::filebacked.big.matrix(nrow = n,
 big_matrix_path <- paste(getwd(),"X_desc",sep="/")
 
 rep_big_x(x = x, n = nsamples, bigmatrix = big_matrix_path)
-=======
+
 big_matrix_path <- paste(getwd(),"X_desc",sep="/")
 
 bigmemory::filebacked.big.matrix(nrow = n,
@@ -57,7 +56,6 @@ bigmemory::filebacked.big.matrix(nrow = n,
                                  descriptorfile = "X_desc")
 
 rep_big_x(x, nsamples, big_matrix_path)
->>>>>>> bigx
 
 X <- bigmemory::attach.big.matrix(paste(getwd(),"X_desc",sep="/"))
 ```

@@ -17,7 +17,7 @@
 #'  time.
 #' @return A vector containing event counts.
 
-countEvents <- function(x, breaks, BP = TRUE){
+count_events <- function(x, breaks, BP = TRUE){
     counts <- graphics::hist(
                         x,
                         breaks = breaks,

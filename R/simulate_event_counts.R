@@ -25,7 +25,7 @@
 #'  containing the true (chronological-error-free) event-count sample.
 #' @import pbapply graphics
 
-simulateEventCounts <- function(
+simulate_event_counts <- function(
                             process,
                             times,
                             nevents,
@@ -93,7 +93,7 @@ simulateEventCounts <- function(
 
     true_event_counts <- data.frame(
                                 Timestamps = breaks[1:nbins],
-                                Count = countEvents(
+                                Count = count_events(
                                             x = event_times,
                                             breaks = breaks,
                                             BP = BP),
@@ -171,7 +171,7 @@ simulateEventCounts <- function(
         pbapply::pbsapply(
                     cl = cl,
                     X = 1:nsamples,
-                    FUN = sampleEventCounts,
+                    FUN = sample_event_counts,
                     ceMatrix = ceMatrix,
                     times = new_times,
                     breaks = new_breaks,
@@ -190,7 +190,7 @@ simulateEventCounts <- function(
         Y <- pbapply::pbsapply(
                             cl = cl,
                             X = 1:nsamples,
-                            FUN = sampleEventCounts,
+                            FUN = sample_event_counts,
                             ceMatrix = ceMatrix,
                             times = new_times,
                             breaks = new_breaks,
@@ -202,7 +202,7 @@ simulateEventCounts <- function(
     }else if(!parallel & !bigmatrix){
         Y <- pbapply::pbsapply(
                             X = 1:nsamples,
-                            FUN = sampleEventCounts,
+                            FUN = sample_event_counts,
                             ceMatrix = ceMatrix,
                             times = new_times,
                             breaks = new_breaks,
