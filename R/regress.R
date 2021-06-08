@@ -53,8 +53,17 @@ regress <- function(Y,
                     scales = NA,
                     priors = NULL){
     # Check argument validity and set up additional parameters
-    if (!is.matrix(Y) | !is.matrix(X)){
-        stop("Y and X must be matrices.")
+    is_matrix <- is.matrix(Y) | is.matrix(X)
+    bigmemory_installed <- requireNamespace("bigmemory", quietly = TRUE)
+    if(bigmemory_installed){
+        is_big_matrix <- bigmemory::is.big.matrix(Y) |
+                        bigmemory::is.big.matrix(X)
+    }else{
+        is_big_matrix <- FALSE
+    }
+    # If neither Y nor X are matrices or big matrix pointers, fail
+    if (!is_matrix & !is_big_matrix){
+        stop("Y and X must be matrices or big matrix pointers.")
     }
     if (!(model %in% c("nb", "pois"))){
         stop("Invalid model. Must be one of ('nb', 'pois').")

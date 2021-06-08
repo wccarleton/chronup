@@ -7,6 +7,10 @@ write_to_big_matrix <- function(j, x, bigmatrix){
 }
 
 rep_big_x <- function(x, n, bigmatrix, parallel = T){
+    if (!is.matrix(x)){
+        warning("Coercing x to a matrix.")
+        x <- as.matrix(x)
+    }
     if (parallel){
         ncores <- parallel::detectCores()
         cl <- parallel::makeCluster(ncores - 1)
@@ -14,21 +18,21 @@ rep_big_x <- function(x, n, bigmatrix, parallel = T){
                             wd <- getwd()
                             devtools::load_all()
                             })
-        pbapply::pbsapply(
-                    cl = cl,
-                    X = 1:n,
-                    FUN = write_to_big_matrix,
-                    x = x,
-                    bigmatrix = bigmatrix)
+        pbapply::pbsapply(cl = cl,
+                        X = 1:n,
+                        FUN = write_to_big_matrix,
+                        # arg name conflict between pbsapply and clusterApply
+                        # forces me to use positional argument for 'x' in this
+                        # one case.
+                        x,
+                        bigmatrix = bigmatrix)
         parallel::stopCluster(cl)
         rm(cl)
     }else{
-        pbapply::pbsapply(
-                    cl = cl,
-                    X = 1:n,
-                    FUN = write_to_big_matrix,
-                    x = x,
-                    bigmatrix = bigmatrix)
+        pbapply::pbsapply(X = 1:n,
+                        FUN = write_to_big_matrix,
+                        x = x,
+                        bigmatrix = bigmatrix)
     }
     return()
 }
