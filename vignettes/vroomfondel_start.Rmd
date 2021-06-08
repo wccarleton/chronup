@@ -2,7 +2,7 @@
 title: "Bayesian regression with chronological uncertainty propagation."
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{BayesReCUP-starthere}
+  %\VignetteIndexEntry{vroomfondel_start}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---

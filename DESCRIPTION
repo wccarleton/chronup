@@ -1,5 +1,5 @@
-Package: BayesReCUP
-Title: Bayesian Regression for Chronological Uncertainty Propagation
+Package: vroomfondel
+Title: Bayesian Regression with Chronological Uncertainty Propagation
     models
 Version: 0.0.0.9000
 Authors@R:
