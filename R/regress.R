@@ -1,7 +1,7 @@
-#' MCMC for nbReCUP model.
+#' Bayesian regression with uncertainty propagation.
 #'
 #' @description This function runs a Metropolis-Hastings MCMC simulation to
-#'  estimate the parameters of a negative-binomial regression model with
+#'  estimate the parameters of a specified regression model with
 #'  chronological uncertainty propagation.
 #'
 #' @param Y Matrix containing integer event-counts. Each column should contain
@@ -13,6 +13,8 @@
 #'  if desired. Thus, the total number of columns in X must be a multiple of
 #'  the number of covariates (with intercept) and the number of desired MCMC
 #'  iterations.
+#' @param model A string specifying the type of model to use. Currently only
+#'  Negative-Binomial ('nb') and Poisson ('pois') models are supported.
 #' @param startvals A numeric vector of starting values for the MCMC.
 #' @param niter (optional) An integer scalar indicating the number of MCMC
 #'  iterations if different from the number of columns in Y.
@@ -39,9 +41,9 @@
 #'  for all parameters.
 #' @import pbapply progress truncnorm stats utils
 
-nbReCUP <- function(
-                    Y,
+regress <- function(Y,
                     X,
+                    model = "nb",
                     startvals,
                     niter = NULL,
                     adapt = T,
@@ -50,27 +52,39 @@ nbReCUP <- function(
                     adapt_window = c(0.21, 0.25),
                     scales = NA,
                     priors = NULL){
-
-    #some checking
+    # Must check argument validity and set up some additional parameters
+    if (!is.matrix(Y) | !is.matrix(X)){
+        stop("Y and X must be matrices.")
+    }
+    if (!(model %in% c("nb", "pois"))){
+        stop("Invalid model. Must be one of 'nb', 'pois'.")
+    }
     nX <- dim(X)[2] / dim(Y)[2]
-    print(nX)
-    if((nX %% 1) != 0){
+    if ((nX %% 1) != 0){
         stop("Y and X must have the same number of columns, or X must have an integer multiple of Y's number of columns.")
     }
-    if(is.null(niter)){
+    if (is.null(niter)){
         niter <- dim(Y)[2]
     }
-    pb <- progress_bar$new(total = niter)
-    nparams <- length(startvals)
     N <- dim(Y)[1]
+    # the type of model determines the number of parameters in the model, which
+    # is important for establishing the matrix intended to contain the mcmc
+    # samples and for several steps in the mcmc for loop.
+    if (model == "nb"){
+        nparams <- nX + N
+    }else if (model == "pois"){
+        nparams <- nX
+    }
     chain <- array(dim = c(niter + 1, nparams))
     chain[1,] <- startvals
-    if(adapt){
+    if (adapt){
         n_adapts <- floor(niter / adapt_interval)
         acceptance <- array(dim = c(n_adapts, nparams))
         scales_matrix <- array(dim = c(n_adapts, nparams))
     }
-    for(j in 1:niter){
+    # monitor progress
+    pb <- progress_bar$new(total = niter)
+    for (j in 1:niter){
         pb$tick()
         # adapt step
         if(adapt & (j %% adapt_interval == 0)){
@@ -99,13 +113,13 @@ nbReCUP <- function(
         pd_proposal <- posterior(Y[, j], X[, x_cols], proposal_regression, nX)
         pd_previous <- posterior(Y[, j], X[, x_cols], chain[j, ], nX)
         accept <- exp(pd_proposal - pd_previous)
-        if(runif(1) < accept){
+        if (runif(1) < accept){
             chain[j + 1, ] <- proposal_regression
         }else{
             chain[j + 1, ] <- chain[j, ]
         }
         # accept step for each p separately
-        for(l in 1:N){
+        for (l in 1:N){
             proposal_p <- chain[j + 1, ]
             proposal_p[nX + l] <- propose_p(chain[j, nX + l], scales[nX + l])
             pd_proposal <- posterior(Y[, j], X[, x_cols], proposal_p, nX)
@@ -119,7 +133,7 @@ nbReCUP <- function(
         }
     }
     alarm()
-    if(adapt){
+    if (adapt){
         return(list(
                 samples = chain,
                 acceptance = acceptance,

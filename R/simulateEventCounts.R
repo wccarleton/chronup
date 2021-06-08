@@ -105,7 +105,7 @@ simulateEventCounts <- function(
         c14post <- pblapply(
                 1:nevents,
                 function(x){
-                    sink("./sink.txt")
+                    sink(paste(tempdir(),"clam_output.txt",sep=""))
                     caldate <- clam::calibrate(
                                         simc14[x,1],
                                         simc14[x,2],

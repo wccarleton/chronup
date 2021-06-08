@@ -15,7 +15,7 @@ knitr::opts_chunk$set(
 ```
 
 ```{r setup}
-library(BayesReCUP)
+devtools::load_all()
 ```
 
 To begin, simulate some data:
@@ -26,7 +26,7 @@ times <- 5000:4001
 beta <- 0.004
 process <- exp(1:nintervals * beta)
 nevents <- 1000
-nsamples <- 1000
+nsamples <- 100
 simseqs <- simulateEventCounts(
                     process = process,
                     times = times,
