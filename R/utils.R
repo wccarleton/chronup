@@ -17,7 +17,7 @@ rep_big_x <- function(x, n, bigmatrix, parallel = T){
         pbapply::pbsapply(
                     cl = cl,
                     X = 1:n,
-                    FUN = write_to_big_x,
+                    FUN = write_to_big_matrix,
                     x = x,
                     bigmatrix = bigmatrix)
         parallel::stopCluster(cl)
@@ -26,18 +26,18 @@ rep_big_x <- function(x, n, bigmatrix, parallel = T){
         pbapply::pbsapply(
                     cl = cl,
                     X = 1:n,
-                    FUN = write_to_big_x,
+                    FUN = write_to_big_matrix,
                     x = x,
                     bigmatrix = bigmatrix)
     }
     return()
 }
 
-approx_c14 <- function(x,t1,t2,r){
+approx_c14 <- function(x, t1, t2, r){
     n <- length(x)
-    funs <- lapply(x,approxfun)
-    y_list <- lapply(1:n,function(j)funs[[j]](seq(t1,t2,r)))
-    y_mat <- do.call(cbind,y_list)
+    funs <- lapply(x, approxfun)
+    y_list <- lapply(1:n, function(j)funs[[j]](seq(t1, t2, r)))
+    y_mat <- do.call(cbind, y_list)
     y_mat[which(is.na(y_mat))] <- 0
     return(y_mat)
 }
