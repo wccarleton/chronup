@@ -35,21 +35,31 @@ simseqs <- simulateEventCounts(process = process,
 
 Y <- bigmemory::attach.big.matrix(simseqs$Y)
 n <- dim(Y)[1]
-x <- c(rep(1, n),1:n)
-X <- matrix(
-        rep(x, nsamples, each = T),
-        nrow = n)
+x <- cbind(rep(1, n),1:n)
+
+big_matrix_path <- paste(getwd(),"X_desc",sep="/")
+
+bigmemory::filebacked.big.matrix(nrow = n,
+                                 ncol = nsamples * dim(x)[2],
+                                 backingfile = "X_mat",
+                                 backingpath = getwd(),
+                                 descriptorfile = "X_desc")
+
+rep_big_x(x, nsamples, big_matrix_path)
+
+X <- bigmemory::attach.big.matrix(paste(getwd(),"X_desc",sep="/"))
 ```
 
 Then, call the mcmc:
 
 ```{r}
-startvals <- c(0,0,rep(0.5, n))
-startscales <- c(0.01, 0.001, rep(0.05, n))
+startvals <- c(0,0)#rep(0.5, n))
+startscales <- c(0.1, 0.0002)# rep(0.05, n))
 
 mcmc_samples_adapt <- regress(Y = Y,
                             X = X,
-                            model = "nb",
+                            model = "pois",
                             startvals = startvals,
-                            scales = startscales)
+                            scales = startscales,
+                            adapt = F)
 ```

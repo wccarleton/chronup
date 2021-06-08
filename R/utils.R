@@ -18,7 +18,9 @@ rep_big_x <- function(x, n, bigmatrix, parallel = T){
                     cl = cl,
                     X = 1:n,
                     FUN = write_to_big_matrix,
-                    x = x,
+                    # arg name conflicts between pbsapply and clusterApply
+                    # forced me to use positional passing for 'x' here
+                    x,
                     bigmatrix = bigmatrix)
         parallel::stopCluster(cl)
         rm(cl)
