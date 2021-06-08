@@ -25,6 +25,7 @@
 #'  like `apply()` or 'parApply()', this function will return a matrix. If the
 #'  `bigmemory` argument is not NULL, this function will return nothing and
 #'  instead write the output to the relevant big matrix file.
+#' @export
 
 sample_event_counts <- function(
                         x = NULL,

@@ -16,7 +16,8 @@ rep_big_x <- function(x, n, bigmatrix, parallel = T){
         cl <- parallel::makeCluster(ncores - 1)
         parallel::clusterEvalQ(cl,{
                             wd <- getwd()
-                            devtools::load_all()
+                            # devtools::load_all()
+                            library(vroomfondel)
                             })
         pbapply::pbsapply(cl = cl,
                         X = 1:n,

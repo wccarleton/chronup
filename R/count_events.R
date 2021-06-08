@@ -16,6 +16,7 @@
 #'  graphics::hist is reversed to preserve a rightward/downward direction of
 #'  time.
 #' @return A vector containing event counts.
+#' @export
 
 count_events <- function(x, breaks, BP = TRUE){
     counts <- graphics::hist(

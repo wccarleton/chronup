@@ -24,6 +24,7 @@
 #'  '(or a file path pointing to a file-backed bigmatrix); 2) a dataframe
 #'  containing the true (chronological-error-free) event-count sample.
 #' @import pbapply graphics
+#' @export
 
 simulate_event_counts <- function(
                             process,
@@ -93,10 +94,10 @@ simulate_event_counts <- function(
 
     true_event_counts <- data.frame(
                                 Timestamps = breaks[1:nbins],
-                                Count = count_events(
-                                            x = event_times,
-                                            breaks = breaks,
-                                            BP = BP),
+                                Count = vroomfondel::count_events(
+                                                                x = event_times,
+                                                                breaks = breaks,
+                                                                BP = BP),
                                 Time = c(1:nbins) * abs(binning_resolution))
 
     if(c14){
@@ -166,12 +167,12 @@ simulate_event_counts <- function(
         cl <- parallel::makeCluster(ncores - 1)
         parallel::clusterEvalQ(cl,{
                             wd <- getwd()
-                            devtools::load_all()
+                            #devtools::load_all()
                             })
         pbapply::pbsapply(
                     cl = cl,
                     X = 1:nsamples,
-                    FUN = sample_event_counts,
+                    FUN = vroomfondel::sample_event_counts,
                     ce_matrix = ce_matrix,
                     times = new_times,
                     breaks = new_breaks,
@@ -185,12 +186,12 @@ simulate_event_counts <- function(
         cl <- parallel::makeCluster(ncores - 1)
         parallel::clusterEvalQ(cl,{
                             wd <- getwd()
-                            devtools::load_all()
+                            #devtools::load_all()
                             })
         Y <- pbapply::pbsapply(
                             cl = cl,
                             X = 1:nsamples,
-                            FUN = sample_event_counts,
+                            FUN = vroomfondel::sample_event_counts,
                             ce_matrix = ce_matrix,
                             times = new_times,
                             breaks = new_breaks,
@@ -202,7 +203,7 @@ simulate_event_counts <- function(
     }else if(!parallel & !bigmatrix){
         Y <- pbapply::pbsapply(
                             X = 1:nsamples,
-                            FUN = sample_event_counts,
+                            FUN = vroomfondel::sample_event_counts,
                             ce_matrix = ce_matrix,
                             times = new_times,
                             breaks = new_breaks,
