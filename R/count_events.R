@@ -18,15 +18,23 @@
 #' @return A vector containing event counts.
 #' @export
 
-count_events <- function(x, breaks, BP = TRUE){
-    counts <- graphics::hist(
+count_events <- function(x,
+                        breaks,
+                        BP = TRUE){
+    if(BP){
+        counts <- graphics::hist(
                         x,
                         breaks = breaks,
-                        include.lowest = F,
-                        plot = F)$counts
-    if(BP){
+                        include.lowest = FALSE,
+                        plot = FALSE)$counts
         return(rev(counts))
     }else{
+        counts <- graphics::hist(
+                        x,
+                        breaks = breaks,
+                        right = FALSE,
+                        include.lowest = FALSE,
+                        plot = F)$counts
         return(counts)
     }
 }

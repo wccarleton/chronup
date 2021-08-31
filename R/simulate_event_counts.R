@@ -70,7 +70,7 @@ simulate_event_counts <- function(
 
     #check for chronological error matrix
     if(!c14 & is.null(ce_matrix)){
-        stop("ce_matrix is required if c14 = F")
+        stop("ce_matrix is required if c14 = FALSE")
     }
 
     #set some global parameters
@@ -185,9 +185,7 @@ simulate_event_counts <- function(
         ncores <- parallel::detectCores()
         cl <- parallel::makeCluster(ncores - 1)
         parallel::clusterEvalQ(cl,{
-                            wd <- getwd()
-                            #devtools::load_all()
-                            })
+                            wd <- getwd()})
         Y <- pbapply::pbsapply(
                             cl = cl,
                             X = 1:nsamples,
