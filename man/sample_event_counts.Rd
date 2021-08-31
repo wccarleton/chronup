@@ -8,7 +8,7 @@ sample_event_counts(
   x = NULL,
   ce_matrix,
   times,
-  breaks,
+  breaks = NULL,
   BP = T,
   bigmatrix = NULL
 )
@@ -29,11 +29,8 @@ for a single event and the rows should each refer to discrete times.}
 \item{breaks}{A vector containing (time) bin edges used for counting events.
 These edges need not define intervals at the same resolution as the \code{times}
 argument (e.g., times can refer to years while the bins can refer to
-decades). But, keep in mind that the bins have to include all of the
-possible intervals into which events occurring at different times can fall.
-Also, the bin edges defined by this argument will serve as the right-most
-boundary condition which will be closed, i.e., the interval will be left-
-open and right-closed: ( ].}
+decades). But, keep in mind that the bins should include all of the
+possible intervals into which events can fall. Also, the bin edges defined #'  by this argument will serve as the right-most boundary condition which will #'  be closed, i.e., the interval will be left-open and right-closed: ( ].}
 
 \item{BP}{Logical (default T). Assume a Before Present timescale?}
 
