@@ -51,9 +51,12 @@ regress <- function(Y,
                     adapt_amount = 0.1,
                     adapt_interval = 10,
                     adapt_window = c(0.21, 0.25),
-                    scales = NA,
+                    scales = NULL,
                     priors = NULL){
     # Check argument validity and set up additional parameters
+    if(is.null(scales)){
+        stop("Must input scales for proposal distributions.")
+    }
     is_matrix <- is.matrix(Y) | is.matrix(X)
     bigmemory_installed <- requireNamespace("bigmemory", quietly = TRUE)
     if(bigmemory_installed){
@@ -89,7 +92,7 @@ regress <- function(Y,
     }else if (model == "pois"){
         nparams <- nX
     }
-    # If the user hasn't provuded any starting values to initialize the mcmc,
+    # If the user hasn't provided any starting values to initialize the mcmc,
     # we can provide some (probably dumb) defaults.
     if (is.null(startvals)){
         alert <- paste("No starting values provided ('startvals == NULL').",
@@ -116,7 +119,7 @@ regress <- function(Y,
         # adapt step
         if(adapt & (j %% adapt_interval == 0)){
             interval_index <- c(j - adapt_interval + 1):j
-            diffs <- apply(chain[interval_index, ], 2, diff)
+            diffs <- apply(as.matrix(chain[interval_index, ]), 2, diff)
             acceptance_rate <- 1 - colMeans(diffs == 0)
             acceptance[j / adapt_interval, ] <- acceptance_rate
             scales <- unlist(
@@ -198,14 +201,14 @@ regress <- function(Y,
 
 likelihood <- function(Y, X, params, nX, model){
     if (model == "nb"){
-        pred <- exp(X %*% params[1:nX])
+        pred <- exp(as.matrix(X) %*% params[1:nX])
         loglike <- dnbinom(x = Y,
                         size = pred,
                         prob = params[-c(1:nX)],
                         log = T)
         sll <- sum(loglike)
     }else if (model == "pois"){
-        pred <- exp(X %*% params[1:nX])
+        pred <- exp(as.matrix(X) %*% params[1:nX])
         loglike <- dpois(x = Y,
                         lambda = pred,
                         log = T)

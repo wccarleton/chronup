@@ -18,10 +18,11 @@
 #'  instead write the output to the relevant big matrix file.
 #' @export
 
-sample_event_times <- function(x = NULL,
-                                ce_matrix,
-                                times,
-                                bigmatrix = NULL){
+sample_event_times <- function(
+                            x = NULL,
+                            ce_matrix,
+                            times,
+                            bigmatrix = NULL){
     times_sample <- apply(ce_matrix,2,function(j)sample(times, size=1, prob=j))
     if(!is.null(bigmatrix)){
         if(requireNamespace("bigmemory", quietly = TRUE)){

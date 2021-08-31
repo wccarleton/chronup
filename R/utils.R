@@ -17,7 +17,7 @@ rep_big_x <- function(x, n, bigmatrix, parallel = T){
         parallel::clusterEvalQ(cl,{
                             wd <- getwd()
                             # devtools::load_all()
-                            library(vroomfondel)
+                            library(chronup)
                             })
         pbapply::pbsapply(cl = cl,
                         X = 1:n,
@@ -45,4 +45,16 @@ approx_c14 <- function(x, t1, t2, r){
     y_mat <- do.call(cbind, y_list)
     y_mat[which(is.na(y_mat))] <- 0
     return(y_mat)
+}
+
+find_max_count <- function(event_count_freqs){
+    non_zeros <- apply(event_count_freqs,
+                        2,
+                        function(x)any(x>0))
+    return(max(which(non_zeros)))
+}
+
+mids <- function(x){
+    y <- x[-length(x)] + (diff(x)/2)
+    return(y)
 }

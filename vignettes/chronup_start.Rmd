@@ -1,8 +1,8 @@
 ---
-title: "Bayesian Regression with Chronological Uncertainty Propagation"
+title: "Chronological Uncertainty Propagation Toolkit"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{vroomfondel_start}
+  %\VignetteIndexEntry{chronup_start}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -15,7 +15,7 @@ knitr::opts_chunk$set(
 ```
 
 ```{r setup}
-library(vroomfondel)
+library(chronup)
 ```
 
 To begin, simulate some data:
@@ -26,7 +26,7 @@ times <- 5000:4001
 beta <- -0.004
 process <- exp(1:nintervals * beta)
 nevents <- 10
-nsamples <- 10
+nsamples <- 1000
 sim_sequences <- simulate_event_counts(process = process,
                             times = times,
                             nevents = nevents,
@@ -45,7 +45,7 @@ bigmemory::filebacked.big.matrix(nrow = n,
 
 big_matrix_path <- paste(getwd(),"X_desc",sep="/")
 
-vroomfondel:::rep_big_x(x, nsamples, big_matrix_path)
+chronup:::rep_big_x(x, nsamples, big_matrix_path)
 
 X <- bigmemory::attach.big.matrix(paste(getwd(),"X_desc",sep="/"))
 ```

@@ -1,5 +1,5 @@
-Package: vroomfondel
-Title: Bayesian Regression with Chronological Uncertainty Propagation
+Package: chronup
+Title: Chronological Uncertainty Propagation Toolkit
 Version: 0.0.0.9000
 Authors@R:
     person(given = "W. Christopher",

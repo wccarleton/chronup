@@ -70,7 +70,7 @@ simulate_event_counts <- function(
 
     #check for chronological error matrix
     if(!c14 & is.null(ce_matrix)){
-        stop("ce_matrix is required if c14 = F")
+        stop("ce_matrix is required if c14 = FALSE")
     }
 
     #set some global parameters
@@ -94,7 +94,7 @@ simulate_event_counts <- function(
 
     true_event_counts <- data.frame(
                                 Timestamps = breaks[1:nbins],
-                                Count = vroomfondel::count_events(
+                                Count = chronup::count_events(
                                                                 x = event_times,
                                                                 breaks = breaks,
                                                                 BP = BP),
@@ -172,7 +172,7 @@ simulate_event_counts <- function(
         pbapply::pbsapply(
                     cl = cl,
                     X = 1:nsamples,
-                    FUN = vroomfondel::sample_event_counts,
+                    FUN = chronup::sample_event_counts,
                     ce_matrix = ce_matrix,
                     times = new_times,
                     breaks = new_breaks,
@@ -185,13 +185,11 @@ simulate_event_counts <- function(
         ncores <- parallel::detectCores()
         cl <- parallel::makeCluster(ncores - 1)
         parallel::clusterEvalQ(cl,{
-                            wd <- getwd()
-                            #devtools::load_all()
-                            })
+                            wd <- getwd()})
         Y <- pbapply::pbsapply(
                             cl = cl,
                             X = 1:nsamples,
-                            FUN = vroomfondel::sample_event_counts,
+                            FUN = chronup::sample_event_counts,
                             ce_matrix = ce_matrix,
                             times = new_times,
                             breaks = new_breaks,
@@ -203,7 +201,7 @@ simulate_event_counts <- function(
     }else if(!parallel & !bigmatrix){
         Y <- pbapply::pbsapply(
                             X = 1:nsamples,
-                            FUN = vroomfondel::sample_event_counts,
+                            FUN = chronup::sample_event_counts,
                             ce_matrix = ce_matrix,
                             times = new_times,
                             breaks = new_breaks,
