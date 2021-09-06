@@ -10,9 +10,9 @@
 #'  bins). It should be negative if using the BP timescale (i.e, if BP = T).
 #' @param BP Logical (default T). Assume a Before Present timescale?
 #' @param c14 Logical (default T). Are the events dated with radiocarbon? If
-#'  so, the R package 'clam' will be used to simulate c14 dates from the 'true'
+#'  so, the R package 'IntCal' will be used to simulate c14 dates from the 'true'
 #'  samples of the 'times' vector and then calibrate those dates.
-#' @param ce_matrix A matrix containing discrete estimates describing
+#' @param chronun_matrix A matrix containing discrete estimates describing
 #'  chronological uncertainty. Each column should contain density estimates
 #'  for a single event and the rows should each refer to discrete times. If c14
 #'  = F, then this matrix must be included.
@@ -34,7 +34,7 @@ simulate_event_counts <- function(
                             binning_resolution = -1,
                             BP = T,
                             c14 = T,
-                            ce_matrix = NULL,
+                            chronun_matrix = NULL,
                             bigmatrix = T,
                             parallel = T){
 
@@ -55,11 +55,11 @@ simulate_event_counts <- function(
         }
     }
 
-    #clam, for c14 calibration
+    #IntCal, for c14 calibration
     if(c14){
-        clam_installed <- requireNamespace("clam", quietly = TRUE)
-        if(!clam_installed){
-            stop("package 'clam' is required if c14 = T")
+        IntCal_installed <- requireNamespace("IntCal", quietly = TRUE)
+        if(!IntCal_installed){
+            stop("package 'IntCal' is required if c14 = T")
         }
     }
 
@@ -69,8 +69,8 @@ simulate_event_counts <- function(
     }
 
     #check for chronological error matrix
-    if(!c14 & is.null(ce_matrix)){
-        stop("ce_matrix is required if c14 = FALSE")
+    if(!c14 & is.null(chronun_matrix)){
+        stop("chronun_matrix is required if c14 = FALSE")
     }
 
     #set some global parameters
@@ -102,16 +102,16 @@ simulate_event_counts <- function(
 
     if(c14){
         message("Simulating and calibrating c14 dates.")
-        simc14 <- t(sapply(event_times, clam::calBP.14C))
+        simc14 <- t(sapply(event_times, IntCal::calBP.14C))
         c14post <- pblapply(
                 1:nevents,
                 function(x){
-                    sink(paste(tempdir(),"clam_output.txt",sep=""))
-                    caldate <- clam::calibrate(
+                    sink(paste(tempdir(),"IntCal_output.txt",sep=""))
+                    caldate <- IntCal::calibrate(
                                         simc14[x,1],
                                         simc14[x,2],
                                         graph = F,
-                                        BCAD = !BP)$calib
+                                        BCAD = !BP)[[1]]
                     sink()
                     return(caldate)
                 })
@@ -124,13 +124,13 @@ simulate_event_counts <- function(
                                 )
                             )
         if(BP){
-            ce_matrix <- approx_c14(
+            chronun_matrix <- approx_c14(
                     c14post,
                     sample_time_range[2],
                     sample_time_range[1],
                     resolution)
         }else{
-            ce_matrix <- approx_c14(
+            chronun_matrix <- approx_c14(
                     c14post,
                     sample_time_range[1],
                     sample_time_range[2],
@@ -173,7 +173,7 @@ simulate_event_counts <- function(
                     cl = cl,
                     X = 1:nsamples,
                     FUN = chronup::sample_event_counts,
-                    ce_matrix = ce_matrix,
+                    chronun_matrix = chronun_matrix,
                     times = new_times,
                     breaks = new_breaks,
                     bigmatrix = paste(wd,"Y_desc",sep=""))
@@ -190,7 +190,7 @@ simulate_event_counts <- function(
                             cl = cl,
                             X = 1:nsamples,
                             FUN = chronup::sample_event_counts,
-                            ce_matrix = ce_matrix,
+                            chronun_matrix = chronun_matrix,
                             times = new_times,
                             breaks = new_breaks,
                             bigmatrix = NULL)
@@ -198,11 +198,22 @@ simulate_event_counts <- function(
         return(list(
                 Y = Y,
                 counts = true_event_counts))
+    }else if(!parallel & bigmatrix){
+        pbapply::pbsapply(
+                    X = 1:nsamples,
+                    FUN = chronup::sample_event_counts,
+                    chronun_matrix = chronun_matrix,
+                    times = new_times,
+                    breaks = new_breaks,
+                    bigmatrix = paste(wd,"Y_desc",sep=""))
+        return(list(
+                Y = paste(wd,"Y_desc",sep=""),
+                counts = true_event_counts))
     }else if(!parallel & !bigmatrix){
         Y <- pbapply::pbsapply(
                             X = 1:nsamples,
                             FUN = chronup::sample_event_counts,
-                            ce_matrix = ce_matrix,
+                            chronun_matrix = chronun_matrix,
                             times = new_times,
                             breaks = new_breaks,
                             bigmatrix = NULL)

@@ -47,13 +47,6 @@ approx_c14 <- function(x, t1, t2, r){
     return(y_mat)
 }
 
-find_max_count <- function(event_count_freqs){
-    non_zeros <- apply(event_count_freqs,
-                        2,
-                        function(x)any(x>0))
-    return(max(which(non_zeros)))
-}
-
 mids <- function(x){
     y <- x[-length(x)] + (diff(x)/2)
     return(y)

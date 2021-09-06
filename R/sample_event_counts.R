@@ -5,7 +5,7 @@
 #'  vectorized or parallel function call (e.g., apply() or parApply()). If
 #'  you're not using a parallel apply function (e.g., parApply), ignore this
 #'  parameter.
-#' @param ce_matrix A matrix containing discrete estimates describing
+#' @param chronun_matrix A matrix containing discrete estimates describing
 #'  chronological uncertainty. Each column should contain density estimates
 #'  for a single event and the rows should each refer to discrete times.
 #' @param times A vector of possible event times.
@@ -28,14 +28,14 @@
 
 sample_event_counts <- function(
                         x = NULL,
-                        ce_matrix,
+                        chronun_matrix,
                         times,
                         breaks = NULL,
                         BP = T,
                         bigmatrix = NULL){
     # Check user input
-    if(dim(ce_matrix)[1] != length(times)){
-        stop("times length must be equal to the number of rows in ce_matrix.")
+    if(dim(chronun_matrix)[1] != length(times)){
+        stop("times length must be equal to the number of rows in chronun_matrix.")
     }
     resolution <- mean(diff(times))
     if(BP & resolution > 0){
@@ -52,7 +52,7 @@ sample_event_counts <- function(
             breaks <- seq(from = start, to = end, by = resolution)
         }
     }
-    times_sample <- apply(ce_matrix,
+    times_sample <- apply(chronun_matrix,
                         2,
                         function(j)sample(times, size=1, prob=j))
     count_sample <- chronup::count_events(times_sample, breaks, BP)

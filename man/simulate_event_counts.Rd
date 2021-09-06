@@ -12,7 +12,7 @@ simulate_event_counts(
   binning_resolution = -1,
   BP = T,
   c14 = T,
-  ce_matrix = NULL,
+  chronun_matrix = NULL,
   bigmatrix = T,
   parallel = T
 )
@@ -34,10 +34,10 @@ bins). It should be negative if using the BP timescale (i.e, if BP = T).}
 \item{BP}{Logical (default T). Assume a Before Present timescale?}
 
 \item{c14}{Logical (default T). Are the events dated with radiocarbon? If
-so, the R package 'clam' will be used to simulate c14 dates from the 'true'
+so, the R package 'IntCal' will be used to simulate c14 dates from the 'true'
 samples of the 'times' vector and then calibrate those dates.}
 
-\item{ce_matrix}{A matrix containing discrete estimates describing
+\item{chronun_matrix}{A matrix containing discrete estimates describing
 chronological uncertainty. Each column should contain density estimates
 for a single event and the rows should each refer to discrete times. If c14
 = F, then this matrix must be included.}

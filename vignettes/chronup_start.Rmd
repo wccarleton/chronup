@@ -31,7 +31,8 @@ sim_sequences <- simulate_event_counts(process = process,
                             times = times,
                             nevents = nevents,
                             nsamples = nsamples,
-                            bigmatrix = T)
+                            bigmatrix = T,
+                            parallel = F)
 
 Y <- bigmemory::attach.big.matrix(sim_sequences$Y)
 n <- dim(Y)[1]
@@ -45,7 +46,10 @@ bigmemory::filebacked.big.matrix(nrow = n,
 
 big_matrix_path <- paste(getwd(),"X_desc",sep="/")
 
-chronup:::rep_big_x(x, nsamples, big_matrix_path)
+chronup:::rep_big_x(x,
+                nsamples,
+                big_matrix_path,
+                parallel = F)
 
 X <- bigmemory::attach.big.matrix(paste(getwd(),"X_desc",sep="/"))
 ```

@@ -1,3 +1,18 @@
+#' Plot count ensemble.
+#'
+#' @param count_ensemble A matrix with comlumns that each refer to a probable
+#'  count sequence and rows refer to the count of events at a given time.
+#' @param times A vector of times stamps that correspond to the times of the
+#'  count_ensemble rows.
+#' @param use_ggplot2 Logical. Should the package ggplot2 be used for plotting?
+#' @param axis_x_res The resolution for the plotted x axis (time). Not used if
+#'  use_ggplot2 == T.
+#' @param axis_y_res The resolution for the plotted y axis (count). Not used if
+#'  use_ggplot2 == T.
+#' @return This plot function returns NULL if use_ggplot2 == FALSE or a ggplot2
+#'  object if use_ggplot2 == T.
+#' @export
+
 plot_count_ensemble <- function(count_ensemble,
                                 times,
                                 use_ggplot2 = FALSE,
@@ -23,7 +38,7 @@ plot_count_ensemble <- function(count_ensemble,
                         mapping = ggplot2::aes(x = x, y = y)) +
                 ggplot2::geom_raster(mapping = ggplot2::aes(fill = frequency)) +
                 ggplot2::scale_fill_viridis_c(option = "B",
-                                    na.value = rgb(0, 0, 0, 0),
+                                    na.value = grDevices::rgb(0, 0, 0, 0),
                                     begin = 0.15,
                                     alpha = 0.9,
                                     trans = "log") +
@@ -38,7 +53,7 @@ plot_count_ensemble <- function(count_ensemble,
             y = 1:dim(count_ensemble_na)[2],
             z = count_ensemble_na,
             useRaster = T,
-            col = hcl.colors(n = 10, palette = "viridis", alpha = 0.9),
+            col = grDevices::hcl.colors(n = 10, palette = "viridis", alpha = 0.9),
             axes = FALSE,
             xlab = "Time",
             ylab = "Count")

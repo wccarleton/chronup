@@ -6,7 +6,7 @@
 \usage{
 sample_event_counts(
   x = NULL,
-  ce_matrix,
+  chronun_matrix,
   times,
   breaks = NULL,
   BP = T,
@@ -20,7 +20,7 @@ vectorized or parallel function call (e.g., apply() or parApply()). If
 you're not using a parallel apply function (e.g., parApply), ignore this
 parameter.}
 
-\item{ce_matrix}{A matrix containing discrete estimates describing
+\item{chronun_matrix}{A matrix containing discrete estimates describing
 chronological uncertainty. Each column should contain density estimates
 for a single event and the rows should each refer to discrete times.}
 

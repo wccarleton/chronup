@@ -4,7 +4,7 @@
 \alias{sample_event_times}
 \title{Sample event times.}
 \usage{
-sample_event_times(x = NULL, ce_matrix, times, bigmatrix = NULL)
+sample_event_times(x = NULL, chronun_matrix, times, bigmatrix = NULL)
 }
 \arguments{
 \item{x}{An integer specifying the index of a vector to enable easy
@@ -13,7 +13,7 @@ vectorized or parallel function call (e.g., apply() or parApply()). If
 you're not using a parallel apply function (e.g., parApply), ignore this
 parameter.}
 
-\item{ce_matrix}{A matrix containing discrete estimates describing
+\item{chronun_matrix}{A matrix containing discrete estimates describing
 chronological uncertainty. Each column should contain density estimates
 for a single event and the rows should each refer to discrete times.}
 
