@@ -11,6 +11,7 @@
 #'  use_ggplot2 == T.
 #' @return This plot function returns NULL if use_ggplot2 == FALSE or a ggplot2
 #'  object if use_ggplot2 == T.
+#' @importFrom rlang .data
 #' @export
 
 plot_count_ensemble <- function(count_ensemble,
@@ -35,7 +36,7 @@ plot_count_ensemble <- function(count_ensemble,
                                                     names_to = "y",
                                                     values_to = "frequency")
             p <- ggplot2::ggplot(data = count_ensemble_df_long,
-                        mapping = ggplot2::aes(x = x, y = y)) +
+                        mapping = ggplot2::aes(x = .data$x, y = .data$y)) +
                 ggplot2::geom_raster(mapping = ggplot2::aes(fill = frequency)) +
                 ggplot2::scale_fill_viridis_c(option = "B",
                                     na.value = grDevices::rgb(0, 0, 0, 0),

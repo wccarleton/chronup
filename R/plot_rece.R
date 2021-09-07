@@ -49,14 +49,14 @@ plot_rece <- function(c14_dates,
     event_count_freqs <- t(apply(event_count_samples,
                                 1,
                                 chronup::tabulate_freqs,
-                                n_events=dim(c14_dates)[1]))
+                                n_events = dim(c14_dates)[1]))
     max_count <- chronup::find_max_count(event_count_freqs)
-    p <- chronup::plot_count_ensemble(event_count_freqs[,2:max_count],
+    p <- chronup::plot_count_ensemble(event_count_freqs[, 2:max_count],
                         times = times,
                         use_ggplot2 = use_ggplot2,
                         axis_x_res = axis_x_res,
                         axis_y_res = axis_y_res)
-    return(invisible(list(rece = event_count_freqs[,2:max_count],
+    return(invisible(list(rece = event_count_freqs[, 2:max_count],
                             times = times,
                             p = p)))
 }

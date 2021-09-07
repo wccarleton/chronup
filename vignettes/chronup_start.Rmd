@@ -14,6 +14,8 @@ knitr::opts_chunk$set(
 )
 ```
 
+Chronological uncertainty is a ubiquitous challenge for sciences of the past. Nearly all of the observations we can make about past people, animals, plants, objects, and events need to be dated, and those dates are usually uncertain. The dates are uncertain because all of the chronometric methods available to us come with uncertainty. Some methods come with relatively small uncertainties, like dendrochronology, which can yield age estimates with single-year errors. Others come with much higher levels of uncertainty, like radiocarbon dating, which can yield age estimates with errors ranging from decades to centuries or more. For a long time, these uncertainties have been acknowledged by the scientific community but are usually left out of formal analyses. As a result, many studies of the past contain a hidden bias, caused by a failure to incorporate the chronological uncertainty we know accompanies observations about the past. Recently, some effort has been directed toward understanding the impact that this neglect has on quantitative methods commonly used in fields like archaeology and palaeoclimatology and, consequently, the impact it has on our current understanding of the past. At the same time, statistical approaches with better handling of chronological uncertainty are being developed. One methodological avenue actively being explored involves uncertainty (error) propagation, and the R package chronup is being developed to provide access to the statistical tools produced as part of that ongoing research.
+
 ```{r setup}
 library(chronup)
 ```

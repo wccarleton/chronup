@@ -31,5 +31,6 @@ Suggests:
 Depends:
     truncnorm,
     progress,
-    pbapply
+    pbapply,
+    rlang
 VignetteBuilder: knitr
