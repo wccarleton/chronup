@@ -21,6 +21,7 @@
 #'  These time-stamps correspond to the rows of the rece. The last element is
 #'  the return value of the chronup::plot_count_ensemble function, which is NULL
 #'  if use_ggplot2 == FALSE or a ggplot2 object if use_ggplot2 == T.
+#' @export
 
 plot_rece <- function(c14_dates,
                     nsamples,

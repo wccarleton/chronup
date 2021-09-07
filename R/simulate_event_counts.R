@@ -101,15 +101,15 @@ simulate_event_counts <- function(process,
         simc14 <- t(sapply(event_times, IntCal::calBP.14C))
         c14post <- pblapply(1:nevents,
                             function(x, dates){
-                                IntCal::caldist(age = dates[x,1],
-                                                error = dates[x,2],
+                                IntCal::caldist(age = dates[x, 1],
+                                                error = dates[x, 2],
                                                 BCAD = !BP)},
                                 dates = simc14)
         sample_time_range <- range(
                                 unlist(
                                     lapply(
                                         c14post,
-                                        function(x)range(x[,1])
+                                        function(x)range(x[, 1])
                                     )
                                 )
                             )

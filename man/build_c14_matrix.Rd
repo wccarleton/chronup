@@ -23,7 +23,7 @@ calibrated radiocarbon date density. The rows contain samples of the
 corresponding calibrated date density. The second element in the returned
 list contains the time range spanned by all calibrated dates. This range
 and the resolution argument can be used to recover time-stamps for each
-column in the chronological uncertainty matrix.
+column in the chronun matrix.
 }
 \description{
 Build C14 Matrix.
