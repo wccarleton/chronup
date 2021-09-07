@@ -10,8 +10,8 @@
 #'  bins). It should be negative if using the BP timescale (i.e, if BP = T).
 #' @param BP Logical (default T). Assume a Before Present timescale?
 #' @param c14 Logical (default T). Are the events dated with radiocarbon? If
-#'  so, the R package 'IntCal' will be used to simulate c14 dates from the 'true'
-#'  samples of the 'times' vector and then calibrate those dates.
+#'  so, the R package 'IntCal' will be used to simulate c14 dates from the
+#'  'true' samples of the 'times' vector and then calibrate those dates.
 #' @param chronun_matrix A matrix containing discrete estimates describing
 #'  chronological uncertainty. Each column should contain density estimates
 #'  for a single event and the rows should each refer to discrete times. If c14
@@ -26,17 +26,16 @@
 #' @import pbapply graphics
 #' @export
 
-simulate_event_counts <- function(
-                            process,
-                            times,
-                            nevents,
-                            nsamples,
-                            binning_resolution = -1,
-                            BP = T,
-                            c14 = T,
-                            chronun_matrix = NULL,
-                            bigmatrix = T,
-                            parallel = T){
+simulate_event_counts <- function(process,
+                                times,
+                                nevents,
+                                nsamples,
+                                binning_resolution = -1,
+                                BP = T,
+                                c14 = T,
+                                chronun_matrix = NULL,
+                                bigmatrix = T,
+                                parallel = T){
 
     #check user options for required packages
     #big memory
@@ -82,8 +81,7 @@ simulate_event_counts <- function(
 
     span <- length(times)
 
-    event_times <- sample(
-                        x = times,
+    event_times <- sample(x = times,
                         size = nevents,
                         replace = T,
                         prob = process)
@@ -92,29 +90,21 @@ simulate_event_counts <- function(
 
     nbins <- length(breaks) - 1
 
-    true_event_counts <- data.frame(
-                                Timestamps = breaks[1:nbins],
-                                Count = chronup::count_events(
-                                                                x = event_times,
-                                                                breaks = breaks,
-                                                                BP = BP),
+    true_event_counts <- data.frame(Timestamps = breaks[1:nbins],
+                                Count = chronup::count_events(x = event_times,
+                                                            breaks = breaks,
+                                                            BP = BP),
                                 Time = c(1:nbins) * abs(binning_resolution))
 
     if(c14){
         message("Simulating and calibrating c14 dates.")
         simc14 <- t(sapply(event_times, IntCal::calBP.14C))
-        c14post <- pblapply(
-                1:nevents,
-                function(x){
-                    sink(paste(tempdir(),"IntCal_output.txt",sep=""))
-                    caldate <- IntCal::calibrate(
-                                        simc14[x,1],
-                                        simc14[x,2],
-                                        graph = F,
-                                        BCAD = !BP)[[1]]
-                    sink()
-                    return(caldate)
-                })
+        c14post <- pblapply(1:nevents,
+                            function(x, dates){
+                                IntCal::caldist(age = dates[x,1],
+                                                error = dates[x,2],
+                                                BCAD = !BP)},
+                                dates = simc14)
         sample_time_range <- range(
                                 unlist(
                                     lapply(

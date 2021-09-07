@@ -21,13 +21,13 @@ Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.1
 Suggests:
     bigmemory,
-    IntCal,
     knitr,
     parallel,
     rmarkdown,
     ggplot2,
     tidyr,
-    grDevices
+    grDevices,
+    IntCal
 Depends:
     truncnorm,
     progress,

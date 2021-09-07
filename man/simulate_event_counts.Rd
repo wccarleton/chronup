@@ -34,8 +34,8 @@ bins). It should be negative if using the BP timescale (i.e, if BP = T).}
 \item{BP}{Logical (default T). Assume a Before Present timescale?}
 
 \item{c14}{Logical (default T). Are the events dated with radiocarbon? If
-so, the R package 'IntCal' will be used to simulate c14 dates from the 'true'
-samples of the 'times' vector and then calibrate those dates.}
+so, the R package 'IntCal' will be used to simulate c14 dates from the
+'true' samples of the 'times' vector and then calibrate those dates.}
 
 \item{chronun_matrix}{A matrix containing discrete estimates describing
 chronological uncertainty. Each column should contain density estimates
