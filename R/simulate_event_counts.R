@@ -16,13 +16,18 @@
 #'  chronological uncertainty. Each column should contain density estimates
 #'  for a single event and the rows should each refer to discrete times. If c14
 #'  = F, then this matrix must be included.
+#' @param new_times A vector of times corresponding to the rows in the chronun
+#'  matrix.
 #' @param bigmatrix A character vector containing a path pointing to a
 #'  'bigmemory' matrix descriptor file, or NULL (default).
 #' @param parallel Logical (default = T). Use parallel (multiple processors) to
 #'  speed up computation?
 #' @return A list with 1) a matrix containing probable event count sequences
-#'  '(or a file path pointing to a file-backed bigmatrix); 2) a dataframe
-#'  containing the true (chronological-error-free) event-count sample.
+#'  or a file path pointing to a file-backed bigmatrix (an event count
+#'  ensemble); 2) a dataframe containing the true (chronological-error-free)
+#'  event-count sample; 3) a vector of time-stamps corresponding to the rows in
+#'  the event count ensemble matrix; and 4) a vector of simulated uncalibrated
+#'  radiocarbon dates (NULL is c14 == FALSE).
 #' @import pbapply graphics
 #' @export
 
@@ -34,6 +39,7 @@ simulate_event_counts <- function(process,
                                 BP = T,
                                 c14 = T,
                                 chronun_matrix = NULL,
+                                new_times = NULL,
                                 bigmatrix = T,
                                 parallel = T){
 
@@ -72,6 +78,11 @@ simulate_event_counts <- function(process,
         stop("chronun_matrix is required if c14 = FALSE")
     }
 
+    #check for new_times
+    if(!is.null(chronun_matrix) & is.null(new_times)){
+        stop("If chronun_matrix is supplied, new_times must also be supplied.")
+    }
+
     #set some global parameters
     wd <- paste(getwd(),"/",sep="")
 
@@ -79,14 +90,18 @@ simulate_event_counts <- function(process,
 
     start <- times[1]
 
-    span <- length(times)
+    end <- times[length(times)]
 
     event_times <- sample(x = times,
                         size = nevents,
                         replace = T,
                         prob = process)
 
-    breaks <- seq(start, start - span, binning_resolution)
+    if(BP){
+        breaks <- seq(start, end + binning_resolution, binning_resolution)
+    }else{
+        breaks <- seq(start, end + binning_resolution, binning_resolution)
+    }
 
     nbins <- length(breaks) - 1
 
@@ -107,47 +122,62 @@ simulate_event_counts <- function(process,
                                 dates = simc14)
         sample_time_range <- range(
                                 unlist(
-                                    lapply(
-                                        c14post,
+                                    lapply(c14post,
                                         function(x)range(x[, 1])
                                     )
                                 )
                             )
         if(BP){
-            chronun_matrix <- approx_c14(
-                    c14post,
-                    sample_time_range[2],
-                    sample_time_range[1],
-                    resolution)
-        }else{
-            chronun_matrix <- approx_c14(
-                    c14post,
-                    sample_time_range[1],
-                    sample_time_range[2],
-                    resolution)
-        }
+            chronun_matrix <- approx_c14(c14post,
+                                        sample_time_range[2],
+                                        sample_time_range[1],
+                                        resolution)
+            new_times <- seq(sample_time_range[2],
+                            sample_time_range[1],
+                            resolution)
 
+            new_span <- length(new_times)
+
+            new_breaks <- seq(sample_time_range[2],
+                            sample_time_range[1] - abs(binning_resolution),
+                            binning_resolution)
+        }else{
+            chronun_matrix <- approx_c14(c14post,
+                                        sample_time_range[1],
+                                        sample_time_range[2],
+                                        resolution)
+            new_times <- seq(sample_time_range[1],
+                            sample_time_range[2],
+                            resolution)
+
+            new_span <- length(new_times)
+
+            new_breaks <- seq(sample_time_range[1],
+                            sample_time_range[2] + abs(binning_resolution),
+                            binning_resolution)
+        }
+    }else{
+        simc14 <- NULL
+        new_span <- length(new_times)
+        new_time_range <- range(new_times)
+        if(BP){
+            new_breaks <- seq(sample_time_range[2],
+                            sample_time_range[1] - abs(binning_resolution),
+                            binning_resolution)
+        }else{
+            new_breaks <- seq(sample_time_range[1],
+                            sample_time_range[2] + abs(binning_resolution),
+                            binning_resolution)
+        }
     }
 
-    new_times <- seq(
-                    sample_time_range[2],
-                    sample_time_range[1],
-                    resolution)
-
-    new_span <- length(new_times)
-
-    new_breaks <- seq(
-                    sample_time_range[2],
-                    sample_time_range[1] - abs(binning_resolution),
-                    binning_resolution)
-
     if(bigmatrix){
-        Y <- bigmemory::filebacked.big.matrix(
+        count_ensemble <- bigmemory::filebacked.big.matrix(
                             nrow = new_span,
                             ncol = nsamples,
                             backingpath = wd,
-                            backingfile = "Y_mat",
-                            descriptorfile = "Y_desc")
+                            backingfile = "count_ensemble_mat",
+                            descriptorfile = "count_ensemble_desc")
     }
 
     message("Simulating event count sequences.")
@@ -157,7 +187,7 @@ simulate_event_counts <- function(process,
         cl <- parallel::makeCluster(ncores - 1)
         parallel::clusterEvalQ(cl,{
                             wd <- getwd()
-                            #devtools::load_all()
+                            library(chronup)
                             })
         pbapply::pbsapply(
                     cl = cl,
@@ -166,17 +196,21 @@ simulate_event_counts <- function(process,
                     chronun_matrix = chronun_matrix,
                     times = new_times,
                     breaks = new_breaks,
-                    bigmatrix = paste(wd,"Y_desc",sep=""))
+                    bigmatrix = paste(wd,"count_ensemble_desc",sep=""))
         parallel::stopCluster(cl)
         return(list(
-                Y = paste(wd,"Y_desc",sep=""),
-                counts = true_event_counts))
+                count_ensemble =  paste(wd,"count_ensemble_desc",sep=""),
+                new_times = new_times,
+                counts = true_event_counts,
+                simc14 = simc14))
     }else if(parallel & !bigmatrix){
         ncores <- parallel::detectCores()
         cl <- parallel::makeCluster(ncores - 1)
         parallel::clusterEvalQ(cl,{
-                            wd <- getwd()})
-        Y <- pbapply::pbsapply(
+                            wd <- getwd()
+                            library(chronup)
+                            })
+        count_ensemble <- pbapply::pbsapply(
                             cl = cl,
                             X = 1:nsamples,
                             FUN = chronup::sample_event_counts,
@@ -185,9 +219,10 @@ simulate_event_counts <- function(process,
                             breaks = new_breaks,
                             bigmatrix = NULL)
         parallel::stopCluster(cl)
-        return(list(
-                Y = Y,
-                counts = true_event_counts))
+        return(list(count_ensemble = count_ensemble,
+                    new_times = new_times,
+                    counts = true_event_counts,
+                    simc14 = simc14))
     }else if(!parallel & bigmatrix){
         pbapply::pbsapply(
                     X = 1:nsamples,
@@ -195,20 +230,22 @@ simulate_event_counts <- function(process,
                     chronun_matrix = chronun_matrix,
                     times = new_times,
                     breaks = new_breaks,
-                    bigmatrix = paste(wd,"Y_desc",sep=""))
-        return(list(
-                Y = paste(wd,"Y_desc",sep=""),
-                counts = true_event_counts))
+                    bigmatrix = paste(wd,"count_ensemble_desc",sep=""))
+        return(list(count_ensemble =  paste(wd,"count_ensemble_desc",sep=""),
+                    new_times = new_times,
+                    counts = true_event_counts,
+                    simc14 = simc14))
     }else if(!parallel & !bigmatrix){
-        Y <- pbapply::pbsapply(
+        count_ensemble <- pbapply::pbsapply(
                             X = 1:nsamples,
                             FUN = chronup::sample_event_counts,
                             chronun_matrix = chronun_matrix,
                             times = new_times,
                             breaks = new_breaks,
                             bigmatrix = NULL)
-        return(list(
-                Y = Y,
-                counts = true_event_counts))
+        return(list(count_ensemble = count_ensemble,
+                    new_times = new_times,
+                    counts = true_event_counts,
+                    simc14 = simc14))
     }
 }

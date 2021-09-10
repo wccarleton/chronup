@@ -4,14 +4,14 @@
 \alias{tabulate_freqs}
 \title{Tabulate frequency distribution of event counts for a given interval.}
 \usage{
-tabulate_freqs(event_count_sample, n_events)
+tabulate_freqs(event_count_sample, nevents)
 }
 \arguments{
 \item{event_count_sample}{An integer vector containing samples of event
 count sequences for a given interval. Each element should refer to the
 number of times events fell into the relevant interval.}
 
-\item{n_events}{Number of events.}
+\item{nevents}{Number of events.}
 }
 \value{
 A vector containing frequencies of event counts for each interval.

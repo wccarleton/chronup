@@ -13,6 +13,7 @@ simulate_event_counts(
   BP = T,
   c14 = T,
   chronun_matrix = NULL,
+  new_times = NULL,
   bigmatrix = T,
   parallel = T
 )
@@ -42,6 +43,9 @@ chronological uncertainty. Each column should contain density estimates
 for a single event and the rows should each refer to discrete times. If c14
 = F, then this matrix must be included.}
 
+\item{new_times}{A vector of times corresponding to the rows in the chronun
+matrix.}
+
 \item{bigmatrix}{A character vector containing a path pointing to a
 'bigmemory' matrix descriptor file, or NULL (default).}
 
@@ -50,8 +54,11 @@ speed up computation?}
 }
 \value{
 A list with 1) a matrix containing probable event count sequences
-'(or a file path pointing to a file-backed bigmatrix); 2) a dataframe
-containing the true (chronological-error-free) event-count sample.
+or a file path pointing to a file-backed bigmatrix (an event count
+ensemble); 2) a dataframe containing the true (chronological-error-free)
+event-count sample; 3) a vector of time-stamps corresponding to the rows in
+the event count ensemble matrix; and 4) a vector of simulated uncalibrated
+radiocarbon dates (NULL is c14 == FALSE).
 }
 \description{
 Simulate event counts.
