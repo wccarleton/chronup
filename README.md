@@ -39,19 +39,19 @@ nintervals <- 1000
 times <- 5000:4001
 beta <- -0.004
 process <- exp(1:nintervals * beta)
-nevents <- 100
+nevents <- 200
 nsamples <- 10000
 sim_sequences <- simulate_event_counts(process = process,
                             times = times,
                             nevents = nevents,
                             nsamples = nsamples,
                             bigmatrix = F,
-                            parallel = F)
+                            parallel = T)
 #> Simulating and calibrating c14 dates.
 #> Simulating event count sequences.
 ```
 
-There are two optional arguments included in the function call above, 'bigmatrix' and 'parallel'. In practice, a very large number of plausible event count sequences should be explored in order to account for the chronological uncertainty represented by the joint-density of radiocarbon-dates for a set of events. It is also increasingly common in the academic literature for the number of radiocarbon samples analyzed to be quite large (hundreds to tens-of-thousands of dates). So, to accommodate the large number of plausible count sequences that should be drawn---which can run into the millions---the chronup package can make use of parallelization for sampling and the R package 'bigmemory' for handling large matrices. The 'parallel' and 'bigmatrix' options were set to 'F' because CRAN necessarily limits the computational resources required for producing vignettes, so they were not used for this demonstration. In practice, though, many more cores may be needed to run a real analysis involving hundreds to thousands of dates and a bigmemory matrix may be required to store and manipulate millions of sampled event count sequences.
+There are two optional arguments included in the function call above, 'bigmatrix' and 'parallel'. In practice, a very large number of plausible event count sequences should be explored in order to account for the chronological uncertainty represented by the joint-density of radiocarbon-dates for a set of events. It is also increasingly common in the academic literature for the number of radiocarbon samples analyzed to be quite large (hundreds to tens-of-thousands of dates). So, to accommodate the large number of plausible count sequences that should be drawn---which can run into the millions---the chronup package can make use of parallelization for sampling and the R package 'bigmemory' for handling large matrices. The 'bigmatrix' option was set to 'F' because the simulated dataset is reasonable small. In practice, though, many more cores may be needed to run a real analysis involving hundreds to thousands of dates and a bigmemory matrix may be required to store and manipulate millions of sampled event count sequences.
 
 With the sampled sequences in hand, it will be useful to visualize the data. First, we can plot the event-generating process, reversing the plot axis so that time flows left-to-right:
 
@@ -120,9 +120,9 @@ X <- matrix(
         nrow = n)
 
 dim(Y)
-#> [1]  1357 10000
+#> [1]  1301 10000
 dim(X)
-#> [1]  1357 20000
+#> [1]  1301 20000
 
 Y[1:5, 1:10]
 #>      [,1] [,2] [,3] [,4] [,5] [,6] [,7] [,8] [,9] [,10]
@@ -181,13 +181,13 @@ mcmc_samples <- regress(Y = Y,
 #> 
 
 head(mcmc_samples)
-#>           [,1]         [,2]
-#> [1,] -1.992158 -0.001047176
-#> [2,] -1.992158 -0.001047176
-#> [3,] -1.992158 -0.001047176
-#> [4,] -1.992158 -0.001047176
-#> [5,] -1.992158 -0.001047176
-#> [6,] -1.992158 -0.001047176
+#>           [,1]          [,2]
+#> [1,] -1.320313 -0.0009553337
+#> [2,] -1.320313 -0.0009553337
+#> [3,] -1.320313 -0.0009553337
+#> [4,] -1.246605 -0.0008893117
+#> [5,] -1.246605 -0.0008893117
+#> [6,] -1.246605 -0.0008893117
 ```
 
 When 'adapt' is set to 'FALSE', the function returns the MCMC chains. With enough iterations, the chains will likely contain good samples of the posterior distributions corresponding to the model's parameters. These can be inspected further with standard tools, including those in the 'coda' MCMC package. Here will will simply plot the chains as line-plots and then plot some density estimates to get a quick look at the results:
@@ -254,16 +254,16 @@ mcmc_samples <- regress(Y = Y[indeces,],
 #> 
 
 head(mcmc_samples)
-#>            [,1]         [,2]
-#> [1,] -0.2290916 -0.003328936
-#> [2,] -0.2290916 -0.003328936
-#> [3,] -0.4475525 -0.003148933
-#> [4,] -0.3573578 -0.003383181
-#> [5,] -0.3573578 -0.003383181
-#> [6,] -0.3573578 -0.003383181
+#>           [,1]         [,2]
+#> [1,] 0.4106506 -0.003233014
+#> [2,] 0.2986423 -0.003068006
+#> [3,] 0.2986423 -0.003068006
+#> [4,] 0.2986423 -0.003068006
+#> [5,] 0.2986423 -0.003068006
+#> [6,] 0.2986423 -0.003068006
 ```
 
-As the plots below indicate, the initial bias is significantly reduced and the true parameter estimate ('beta', which was set to -0.004 above) is within the 95% credible interval of the estimated posterior distribution. Again, many more MCMC iterations will be required in order to arrive at good estimates of posterior distributions for the model parameters. The additional iterations will come from increasing the number of randomly sampled probable event count sequences. As a result, an even better estimate of the overall chronological uncertainty in the data can be obtained and then propagated up to the regression model parameter estimates. Additionally, using a Negative-Binomial (NB-REC) model instead would further reduce the bias, especially if the complete time domain of the event count ensemble is being anlayzed instead of a subinterval.
+As the plots below indicate, the initial bias is significantly reduced and the true parameter estimate ('beta', which was set to -0.004 above) is within the 95% credible interval of the estimated posterior distribution. Again, many more MCMC iterations will be required in order to arrive at good estimates of posterior distributions for the model parameters. The additional iterations will come from increasing the number of randomly sampled probable event count sequences. As a result, an even better estimate of the overall chronological uncertainty in the data can be obtained and then propagated up to the regression model parameter estimates. Additionally, using a Negative-Binomial (NB-REC) model instead would further reduce the bias, especially if the complete time domain of the event count ensemble is being analyzed instead of a subinterval.
 
 ``` r
 burnin <- floor(dim(mcmc_samples)[1] * 0.2)
