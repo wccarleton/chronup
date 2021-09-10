@@ -13,59 +13,236 @@ knitr::opts_chunk$set(
   comment = "#>"
 )
 ```
+# Summary
+Chronological uncertainty poses a ubiquitous challenge for sciences of the past. Nearly all of the observations we can make about past people, animals, plants, objects, and events need to be dated, and those dates are usually uncertain because the chronometric methods available come with uncertainty. Some methods come with relatively small uncertainties, like dendrochronology, which can yield age estimates with single-year errors. Others come with much higher levels of uncertainty, like radiocarbon dating, which can yield age estimates with errors ranging from decades to centuries or more. These uncertainties have long been acknowledged by the scientific community but are usually left out of formal analyses. As a result, many studies of the past contain a hidden bias. Recently, some effort has been directed toward understanding the impact that chronological uncertainty has on quantitative methods commonly used in fields like archaeology and palaeoclimatology and, consequently, the impact it has on our current understanding of the past. At the same time, statistical approaches with better handling of chronological uncertainty are being investigated and developed. One methodological avenue actively being explored involves uncertainty (error) propagation, and the R package chronup is being developed to provide access to the statistical tools produced as part of that ongoing research.
 
-Chronological uncertainty is a ubiquitous challenge for sciences of the past. Nearly all of the observations we can make about past people, animals, plants, objects, and events need to be dated, and those dates are usually uncertain. The dates are uncertain because all of the chronometric methods available to us come with uncertainty. Some methods come with relatively small uncertainties, like dendrochronology, which can yield age estimates with single-year errors. Others come with much higher levels of uncertainty, like radiocarbon dating, which can yield age estimates with errors ranging from decades to centuries or more. For a long time, these uncertainties have been acknowledged by the scientific community but are usually left out of formal analyses. As a result, many studies of the past contain a hidden bias, caused by a failure to incorporate the chronological uncertainty we know accompanies observations about the past. Recently, some effort has been directed toward understanding the impact that this neglect has on quantitative methods commonly used in fields like archaeology and palaeoclimatology and, consequently, the impact it has on our current understanding of the past. At the same time, statistical approaches with better handling of chronological uncertainty are being developed. One methodological avenue actively being explored involves uncertainty (error) propagation, and the R package chronup is being developed to provide access to the statistical tools produced as part of that ongoing research.
+# Uncertainty and uncertainty propagation
+Uncertainty propagation is crucial for assessing what we know about the past. If, for example, someone claimed that the Bronze Age Mycenaean civilization of ancient Greece collapsed because climate changes devastated their crops, then one way to assess the plausibility of that claim would be to compare the dates for two key events: the collapse and the climatic change. But, if all we are given are single dates for each event with no indication about the certainty of those age estimates, we cannot evaluate the claim that they were synchronous, let alone causally related. The dates probably have uncertainties---like all scientific measurements---and so we have to be able to include those uncertainties in our assessment of the inference that the two events were related. When combining uncertain observations to produce an inference, we have to propagate the relevant uncertainties from the observations to the inference. This uncertainty propagation is an important part of knowledge discovery involving aggregated observations.
+
+Imagine that what we know about the past exists in a hierarchy. At the lower levels, what we know comes from more-or-less direct observations, and the inferential distance between a given observation and some related past event is short. For example, if we find a grave with human skeletal remains in it, then we know that a person died and was buried in the grave. That set of events (perhaps not in that order) must have occurred at some point in the past. The inferential path we have to take to get from observing a buried skeleton to knowing that a person died is pretty short. But, when they died, where they lived, how they made a living, what their grave indicates about their culture, and so on are all examples of knowledge that cannot be obtained by direct observation and short inferential paths. Instead, that knowledge can only be acquired by hiking much longer inferential paths. This kind of inferred knowledge exists at the upper levels of the knowledge hierarchy. These upper levels, though, are ultimately based on the more direct observations that inhabit the lower levels. Lower-level information needs to be aggregated and analyzed to produce higher-level knowledge.
+
+At all levels, though, there are uncertainties. With the grave, for instance, we might want to know where it is located with respect to other graves or geographic features in order to make inferences about the decisions and/or events that ultimately led to the grave ending up where we found it. Any measurement of distance must be made with instruments and methods that we know to have uncertainties. The same is true of time. If we want to know when the person died, for instance, we could measure the ratio of radiocarbon isotopes in their bones and then use the known rate at which one isotope decays into another to estimate the age of the skeleton. That age estimate fairly closely refers to the time at which the person stopped metabolizing carbon from their environment---i.e., approximately when they died. Importantly, There are a number of well-understood sources of uncertainty involved in making the age determination and these uncertainties need to be accounted for. We need to ensure that the uncertainties at the lower-levels of the knowledge hierarchy are propagated into the higher-levels.
+
+We have many scientific tools at our disposal for moving up the knowledge hierarchy and many have been designed to account for uncertainty. A particularly important and commonly-used one is regression. Regression analyses allow us to compare two or more variables in search of relationships between and/or among them. In a basic regression analysis, the aim is to predict or explain variation in one variable, often referred to as the 'dependent variable', with one or more others, often called 'independent variables'. The relationship between these variables is described by a regression function---a mathematical equation that expresses the amount of change in one variable as a function of a change in one or more others. The parameters of a regression function (i.e., regression coefficients) have uncertainties associated with them, but the most commonly-used regression methods consider only one dimension of uncertainty per variable. For example, a regression model comparing global temperature with greenhouse gas emissions is likely to account for uncertainty in the temperature measurements along a continuum of temperatures (one dimension) and uncertainty in greenhouse gas concentration measurements along a continuum of greenhouse gas concentrations (also one dimension).
+
+Chronological uncertainty, however, often exists in a separate dimension from the a corresponding measurement of interest. Consider palaeothermometry with oxygen isotopes, for example. To reconstruct past temperature variation, scientists exploit a known-relationship between oxygen isotope ratios and ambient temperature. Building a record of past temperatures, then, can be accomplished with a series of isotope measurements and associated ages. Frequently, these isotope series are derived from ice cores, with the North Greenland Ice Core (NGRIP) project having produced the best-known series. Atmospheric oxygen isotopes were incorporated into Greenland glaciers over time as annual layers of snow gradually compressed into solid ice. Each oxygen isotope measurement in the NGRIP record comes from one of these thin layers of ice. Multiple isotope measurements, then, from a sequence of layers can be used to construct a palaeotemperature series.
+
+With ice-core palaeothermometry, there are two main dimensions of uncertainty. The isotope measurement is the focal measure because its the variation in isotope measurements over time that corresponds to variation in temperature. The readings come with measurement uncertainties that indicate a range of plausible isotope values for the relevant ice layer and, in turn, for the atmosphere at the time the layer was formed. The range of possible isotope values can be thought of as the 'isotope measurement' dimension---a continuous range of values referring exclusively to the ratio of two isotope abundances in a sample. The other key dimension is depth along the ice core, a 'depth measurement' dimension. Each isotope measurement has a corresponding depth measurement. Deeper layers formed first, followed by shallower ones, which means that the isotope values can potentially be ordered with respect to time. Identifying and counting the layers is a measurement process, though, that also comes with uncertainty---much more than has often been appreciated. So, if we plotted oxygen isotopes from an ice core as a time series, it would be important to recognize that this single variable has uncertainties in two dimensions. One indicates uncertainty in a given isotope measurement (the vertical axis of a standard plot) and the other dimension indicates uncertainty with respect to the age of that measurement (the horizontal axis).
+
+Now, imagine comparing an uncertain isotope temperature proxy to a second series of observations about the past. Take for instance a comparison involving human settlement counts and a palaeotemperature series. One might expect there to be a correlation between hemispheric temperature and numbers of settlements, assuming that the latter corresponds in some way to regional population size. During times with optimal temperatures we could expect more settlements, and during periods of extreme temperatures we might expect fewer settlements.
+
+Like the isotope record, the settlement count record would have two dimensions of uncertainty. One would correspond to count, the focal measurement, with counting uncertainty from several sources including sampling variability, the visibility of the settlement remains, and other factors. As with the isotopes, the other measurement dimension is time. In order to be counted with respect to time, each settlement would have to be dated. Commonly, dating settlements would be done with a combination of chronometric tools, but for the sake of simplicity here we can ignore the details and just assume a date is available. As explained earlier, all chronometric methods have uncertainties, so the date for the habitation/occupation/use of each settlement is given with some uncertainty estimate. This means that individual settlements could potentially be dated to multiple times, or any interval within a given span of probable times. Thus, the count of settlements at any given time is uncertain in part because of chronological uncertainties, but those uncertainties can be thought of as existing on a separate dimension from the focal count measurement.
+
+In a typical regression model, however, time is taken for granted and only the two focal measurements are considered. In the temperature--settlement example, a basic regression model would compare isotope values on the one hand with settlement counts on the other. Viewing the comparison in a scatter plot, we would see one axis for settlement count (let that be the dependent variable) and another for the temperature reconstruction (an independent variable). Chronological uncertainty would be hidden from view, a dimension not represented in the scatter plot or the regression model. Even a sophisticated errors-in-variables regression model designed to handle uncertainty on both sides of a comparison would normally only be considering uncertainties with respect to count and temperature---the two dimensions of the scatter plot. It would not consider the possibility that the individual observations pertaining to either focal measurement might be dated to different times. That each observation may be dated to a range of probable times means observation pairings in the scatter plot (and the regression model, ultimately) could be incorrect. The true pairings between temperature and settlement count are unknown and unknowable with perfect certainty.
+
+For the most part, chronological uncertainty has simply been left out of these kinds of comparisons. Instead, average or median age estimates are often used to date observations. It is, therefore, very likely that any resulting inferences are biased and possibly quite misleading. In fact, ignoring a dimension of uncertainty altogether by using a point estimate like an average instead of considering the relevant uncertainties is, by definition, introducing a bias---it would be an example of the well-known bias--variance trade off. Consequently, inferences about the past that occupy the higher levels of the knowledge hierarchy are frequently biased because the fundamental uncertainties of the lower-levels have not been propagated up the hierarchy.
+
+To address this problem, regression approaches that incorporate multiple dimensions of uncertainty should be developed and used. Chronological uncertainty needs to be propagated along with other uncertainties. In the context of regression models involving observations about the past, that propagation means that regression coefficient estimates (and any other parameters of interest) should reflect chronological uncertainty associated with all relevant observations.
+
+The tools in the chronup package are intended to facilitate chronological uncertainty propagation. The rest of this document presents a standard analytical pipeline for a regression analysis using chronup.
+
+# Chronological uncertainty propagation in regression with chronup
+
+Comparing counts of radiocarbon dated samples to palaeoclimate proxies has become increasingly common in archaeology. This type of research is predicated on a popular argument about the relationship between concentrations of radiocarbon samples and human population size and/or 'activity', abstractly defined. Human activity, the argument goes, leads to increases in organic carbon contained in archaeological sediments. This is because, essentially, more people means more human remains, more fires producing charred organic carbon, more garbage pits (middens) containing organic material, more settlements with evidence of all three, etc. And so, it follows that variation through time in radiocarbon sample frequency can be expected to correlate with human population levels, broadly speaking and under certain sampling conditions---though, important caveats and inferential challenges are widely recognized. With this logic in mind, we will go over a typical chronup workflow for conducting a regression analysis involving radiocarbon dated event counts.
+
+In lieu of analyzing real data, however, we will simulate. A simulation has two main benefits. Firstly, we can control the values of target parameters (the regression coefficients) so that we can check our answers. Secondly, using simulated dates is of course easier than obtaining real dates and for the purposes of this demonstration there is no meaningful advantage to having real ones. Real archaeological radiocarbon sample data is usually stored under controlled access and re-sharing data with identifying meta-data attached, like sample provenience, puts archaeological resources at risk. Without the provenience, however, there is no practical difference between a simulated date (randomly generated number representing a mean radiocarbon age) and a real one for our purposes here.
+
+To simulate some radiocarbon age determinations, we can use a function called chronup::simulate_event_counts. The primary logic of the function can be divided into four steps. First, the user provides a vector of discrete solutions to a sample-generating process (e.g., population growth model) as an input along with other function parameters. Then, the function generates a random sample of true event dates from the user-generated process. Next, it produces plausible calibrated radiocarbon date densities from this sample of true event ages. And, lastly, it generates random samples of event dates from the calibrated date densities and aggregates those sampled event dates into a set of plausible event-count sequences. The primary output of the function is a matrix containing an ensemble of probable sequences where the rows of the matrix represent time and each column contains one randomly sampled probable event count series.
+
+The chronup::simulate_event_counts function takes a number of arguments. The first three are 'process', 'times', and 'nevents'. The first argument, 'process' is expected to be a vector representing the underlying through-time variation in sample counts. It could be, for instance, solutions to a simple linear equation like y = mx + b, where 'm' is the slope of straight line and 'b' is the y-intercept for the line. Or, more likely, it will be a vector of solutions to some population model, as mentioned. The second argument, 'times' is a vector containing the corresponding time-stamps for the elements of 'process', and it is fairly self-explanatory. Typically, these times will refer to calendar years and they represent the domain of the 'process' function. Next, the 'nevents' argument is meant to contain an integer number of events in the event sample---e.g., 'nevents' might be 100, meaning 100 archaeological settlements are in the simulated dataset. Each event will have its own (not necessarily unique) time, representing the true calendar age of the corresponding event. The times are assumed to be in years before present when another argument, 'BP', is set to its default TRUE value.
+
+The next two key arguments are 'nsamples' and 'binning_resolution'. The argument 'nsamples' defines the number of plausible event-count sequences to draw. These sequences are created by first randomly sampling density functions representing the chronological uncertainty of each randomly sampled event. Then, the random sample of event dates is aggregated into a count series. The series resolution (temporal bin width) is determined by the other key parameter, 'binning_resolution'. If the optional argument 'BP' is set to TRUE, then 'binning_resolution' must be negative because the BP scale counts up backwards in time.
+
+Internally, chronup::simulate_event_counts calls functions from the IntCal package to produce radiocarbon dates. The chronup::simulate_event_counts first calls IntCal::calBP.14C for simulating plausible uncalibrated radiocarbon determinations from the given true calendar ages to introduce chronological uncertainty. Then, IntCal::caldist is called to calibrate the uncalibrated densities. These calibrated densities are then sampled to produce probable event count sequences, as explained.
+
+It should be noted, though, that radiocarbon date sampling and calibration only happens when the optional argument, 'c14', is set to TRUE. It is also possible to pass uncertainty functions for each event to the chronup::simulate_event_counts directly rather than using IntCal functions or even simulated radiocarbon dates at all. An optional argument, 'chronun_matrix', can be defined with a matrix. The rows of this matrix refer to discrete times and each column to a given event. The columns should contain densities estimated at the corresponding discrete times (rows) representing the probability that the relevant event is dated to the given time.
+
+To use the chronup::simulate_event_counts function, first load the chronup library:
 
 ```{r setup}
 library(chronup)
 ```
 
-To begin, simulate some data:
+The example process will be a simple exponential function of time. To generate the discrete samples needed for the 'process' argument, we will define the number of temporal intervals ('nintervals'), a range of calendar dates ('times'), and a slope parameter ('beta'). Then, we will store discrete solutions of the exponential process in the variable 'process' and define the number of events to sample from this process ('nevents') and the number of plausible event count sequences to simulate ('nsamples'). Lastly, we call chronup::simulate_event_counts, passing all of these variables as arguments to the function.
 
 ```{r}
 nintervals <- 1000
 times <- 5000:4001
 beta <- -0.004
 process <- exp(1:nintervals * beta)
-nevents <- 10
-nsamples <- 1000
+nevents <- 100
+nsamples <- 5000
 sim_sequences <- simulate_event_counts(process = process,
                             times = times,
                             nevents = nevents,
                             nsamples = nsamples,
-                            bigmatrix = T,
+                            bigmatrix = F,
                             parallel = F)
-
-Y <- bigmemory::attach.big.matrix(sim_sequences$Y)
-n <- dim(Y)[1]
-x <- cbind(rep(1, n),1:n)
-
-bigmemory::filebacked.big.matrix(nrow = n,
-                                ncol = nsamples * dim(x)[2],
-                                backingfile = "X_mat",
-                                backingpath = getwd(),
-                                descriptorfile = "X_desc")
-
-big_matrix_path <- paste(getwd(),"X_desc",sep="/")
-
-chronup:::rep_big_x(x,
-                nsamples,
-                big_matrix_path,
-                parallel = F)
-
-X <- bigmemory::attach.big.matrix(paste(getwd(),"X_desc",sep="/"))
 ```
 
-Then, call the mcmc:
+There are two optional arguments included in the function call above, 'bigmatrix' and 'parallel'. In practice, a very large number of plausible event count sequences should be explored in order to account for the chronological uncertainty represented by the joint-density of radiocarbon-dates for a set of events. It is also increasingly common in the academic literature for the number of radiocarbon samples analyzed to be quite large (hundreds to tens-of-thousands of dates). So, to accommodate the large number of plausible count sequences that should be drawn---which can run into the millions---the chronup package can make use of parallelization for sampling and the R package 'bigmemory' for handling large matrices. The 'parallel' and 'bigmatrix' options were set to 'F' because CRAN necessarily limits the computational resources required for producing vignettes, so they are unnecessary for this demonstration. In practice, though, many more cores may be needed to run a real analysis involving hundreds to thousands of dates and a bigmemory matrix may be required to store and manipulate millions of sampled event count sequences.
+
+With the sampled sequences in hand, it will be useful to visualize the data. First, we can plot the event-generating process, reversing the plot axis so that time flows left-to-right:
+
+```{r, fig.width = 7, fig.height = 4}
+plot(y = process,
+    x = times,
+    type = "l",
+    xlim = c(times[1], times[length(times)]),
+    xlab = "Time",
+    ylab = "Process Level")
+```
+
+As we would expect, the process is an exponential function that decays at the rate 'beta'.
+
+Next, we can plot the event count sample generated from this process. The chronup::simulate_event_counts function returns a list with three elements, one of which is named 'counts'. This element contains a data frame with the sampled count sequence and associated time-stamps. Plotting this count sequence shows that the simulated data appear to be a reasonable sample from the input event-generating process:
+
+```{r, fig.width = 7, fig.height = 4}
+plot(y = sim_sequences$counts$Count,
+    x = sim_sequences$counts$Timestamps,
+    type = "h",
+    xlim = c(times[1], times[length(times)]),
+    xlab = "Time",
+    ylab = "Count")
+```
+
+Lastly, we can plot the joint-density of event count and time in a way that includes the uncertainties involved. The chronup package provides a plotting function, chronup::plot_count_ensemble, for this purpose. It takes two main arguments, 'count_ensemble' and 'times'. The first of these is going to be the count ensemble matrix output by the simulation function we just used, and the second will be another output from that function called 'new_times'. The latter is a vector of time-stamps that correspond to the rows of the count ensemble matrix. These will be different than the original time-stamps passed to the simulation function as the argument 'times'. The differences arise because the chronological uncertainty associated with individual event times ultimately means that the span of probable time-stamps covered by the simulated event count sequence is longer than the span covered by the original event generating process---a phenomenon sometimes called 'temporal spread'.
+
+```{r, fig.width = 7, fig.height = 4}
+plot_count_ensemble(count_ensemble = sim_sequences$count_ensemble,
+                    times = sim_sequences$new_times)
+```
+
+In this plot, chronological uncertainty is captured by a heat map. The colours in the heatmap indicate the relative probability of count-time pairings based on the sample represented by the count ensemble. Warmer colours indicate higher relative probabilities whereas cooler colours indicate lower relative probabilities. So, it is important not to allow your eye to be fooled into following only the peaks and troughs of the plot in the y-axis dimension. The z-axis is crucial and it is represented in the plot by colour. We can see the overall shape of the event generating process represented in the plot, but it is not a perfect representation. There are features in the plot that do not reflect the true underlying process. This plot represents both event counts *and* chronological uncertainty about individual event times. Still, it provides useful visual information, like the fact that there is a relatively high probability (hot colours) that the count is exactly one around 5000--4800 BP, which is what we would expect given that the highest part of the exponential function used to produce the data is at 5000 BP. At the same time, though, the probability that the count is ~3--5 in that interval is relatively low. This is also something that we would expect because the sample size is small---i.e., we only drew 100 events from the process at an annual resolution over a thousand year period, so the probability that a large number of those samples co-occurred in time often enough to create high y-axis peaks in this plot is likewise small.
+
+With the simulated data in hand, and the plots showing what we expected to see, we can now run a simple chronup regression. The package provides a function for that purpose called chronup::regress. The regression function is Bayesian and uses an MCMC approach to uncertainty propagation. An MCMC approach to uncertainty effectively just means sampling probable values for the data, and then fitting a regression model to the samples to produce posterior distributions for the model parameters that reflect the variability in the samples. In this case, we are focusing on variability derived from chronological uncertainty about event times, but in general the sampling process could be used to incorporate any kind of uncertainty as long as we have representative distributions to draw samples from. It is also worth highlighting here that for this demonstration we are only looking at uncertainty in the event counts, the dependent variable.
+
+The MCMC employed by chronup::regress is a basic Metropolis-Hasting algorithm. So, behind the scenes it uses random samples of potential values for the key regression model parameters and Bayes rule to estimate posterior densities for those parameter values. The algorithm chooses, for example, a random value for a regression coefficient and then calculates the likelihood of that value given the available data. It then keeps or discards that value with a given probability and tries again. Any values the algorithm keeps are stored in vectors called MCMC chains. It is these chains that will ideally contain good samples of parameter posterior distributions once the algorithm has settled on the most likely values for each parameter given the data. The regress function also includes an adaptive process for finding the best distributions from which to randomly draw potential parameter values.
+
+The chronup::regress function takes six main arguments. The first two are 'Y' and 'X', which refer to the dependent and independent variables, respectively. Importantly, though, these will be matrices. The 'Y' argument in our example will be the event count ensemble we produced with the simulation above and the 'X' value will be a matrix where each column is just time indexes from 1 to 1000 representing the passage of time. Each column in 'Y', remember, is a probable event count sequence, and potentially each column in 'X' could be a probable series for the independent variable. The MCMC in the regress function will then walk over these two matrices as the simulation proceeds. Each time the algorithm draws new potential values for the regression model parameters, it will also be selecting a new probable event count sequence and a new probable series for the independent variable(s).
+
+The third argument in the regress function is 'model'. This argument takes a string and can, as of the time of writing, be either 'pois' or 'nb'. These options refer to the two types of count models currently available in the regress function. The first refers to a Poisson ('pois') regression model and the second to a Negative Binomial ('nb') regression model. As has been explained elsewhere, the Negative Binomial distribution comes with advantages for modelling radiocarbon-dated event counts. In particular, it can be adjusted to account better for temporal spread than a simpler Poisson model. This type of model has been referred to as a Negative Binomial Radiocarbon-dated Event Count (NB-REC) model. Here, however, we will focus on the Poisson model because its simplicity makes for faster computation.
+
+The last three arguments for the regress function are 'startvals', 'startscales', and 'adapt'. The 'startvals' argument takes a vector of starting values for the regression model parameters. In the case of the 'nb' model, this vector must contain one element for each regression coefficient (including an intercept if one is needed) and then one element for each 'p' parameter of a standard Negative Binomial distribution for each observation in the count sequence. So, there would be as many 'p' parameters as there are rows in 'Y'. This is not the case with the Poisson model, which has only the usual regression coefficients to worry about. The 'startscales' argument also takes a vector of values. Each element is used as the scale (variance) for the proposal distributions associated with the model's parameters---these are the distributions that the MCMC samples at random when trying different values for each parameter. One scale value has to be given for each parameter in the model, which means that 'startscales' will have the same length as 'startvals'. Finally, the 'adapt' argument is a logical (TRUE/FALSE) value that indicates whether the 'startscales' provided should be adapted by the algorithm. When it is TRUE, the algorithm will shrink/grow the scales for each parameter's proposal distribution depending on the average rate at which it has been accepting potential parameter values.
+
+The number of iterations run during the MCMC can be set with an optional 'niter' parameter. But, if left to its default 'NULL' value, the number of iterations will correspond to the number of columns in the 'Y' matrix. So, for a longer simulation that accounts for more chronological uncertainty, we would randomly sample more probable dependent and independent variable sequences.
+
+As mentioned, for this short demonstration we are only considering chronological uncertainty in the dependent count variable. The 'X' argument is a matrix, though, and so can be used to propagate uncertainties in the independent variables as well. For now, we will simply create a matrix for 'X' that has only cloned columns each containing a copy of a vector representing time. At first, we will use the full interval of time covered by the sampled event count sequences that was returned by the simulation function. We will also include an intercept, even though the original process did not. The intercept will be represented by a column of 1s.
+
+In order for the 'regress' function to work, it is necessary that 'Y' and 'X' have an equal number of columns, or that 'X' has a number of columns equal to an integer multiple of 'Y's number of columns. This is because the algorithm will be selecting a column from 'Y' and one or more columns from 'X' in every iteration of the MCMC. The logic here begin that these pairings, one probable 'Y' with one probable 'X', represents one of the probable combinations of the dependent and independent variable(s) given the uncertainties in both. So, in the simplest case of one dependent and one independent variable, the 'Y' and 'X' matrices must have an equal number of columns. But, if an intercept is included, then for every probable dependent--independent pairing there will be one 'Y' and two 'X' columns, the later including a column for the intercept and a column for a probable series of measures of the independent variable. More independent variables will necessarily mean there needs to be more columns in 'X', but the total number of 'X' columns will always be an integer multiple of the number of columns in 'Y'. That way, each pairing contains a set of realizations from the same set of independent and dependent variables. The following code creates the 'Y' and 'X' matrices:
+
+```{r}
+Y <- sim_sequences$count_ensemble
+n <- dim(Y)[1]
+x0 <- rep(1, n)
+x1 <- 1:n
+X <- matrix(
+        rep(c(x0,x1), nsamples),
+        nrow = n)
+
+dim(Y)
+dim(X)
+
+Y[1:5, 1:10]
+X[1:5, 1:10]
+```
+
+Then, the 'startvals' and 'startscales' parameters should be set. If no 'startvals' are provided, though, the function will select some naive ones. In this case we will be agnostic about both (bear in mind that startscales must be positive and non zero):
 
 ```{r}
 startvals <- c(0,0)
 startscales <- c(0.1, 0.0002)
+```
 
+Next, call the 'chronup::regress' function with the previously defined variables passed as the appropriate arguments. As the code below indicates, we will fun the MCMC with the 'adapt' argument 'TRUE' so that we can find better 'startvals' and 'startscales':
+
+```{r}
 mcmc_samples_adapt <- regress(Y = Y,
                             X = X,
                             model = "pois",
                             startvals = startvals,
                             scales = startscales,
-                            adapt = F)
+                            adapt = T)
+```
+
+With 'adapt' set to TRUE, the 'regress' function returns a list with three elements. One is a matrix containing the MCMC chains---each model parameter is represented by a separate column. The second is a matrix containing acceptance rates for all parameters recorded throughout the simulation at regular intervals (defined by other 'regress' function arguments detailed in the manpage for the function). The last element is a matrix containing the scales tried and used by the algorithm. With this information we can run 'regress' again, but use adapted estimates for the new startvals and startscales, which should improve the convergence of the MCMC leading to better samples of posterior distributions with fewer iterations overall. The MCMC chain samples produced with 'adapt' set to 'TRUE', however, should be discarded as burn-in before further analyses.
+
+So, now we can establish new startvals and startscales given the results of the adaptive MCMC. We will discard some number of samples as burn-in (say, the first 20%) and then use the average of the remaining samples for the new values:
+
+```{r}
+burnin <- floor(dim(mcmc_samples_adapt$samples)[1] * 0.2)
+indeces <- seq(burnin, dim(mcmc_samples_adapt$samples)[1], 1)
+new_startvals <- colMeans(mcmc_samples_adapt$samples[indeces,])
+
+burnin <- floor(dim(mcmc_samples_adapt$scales)[1] * 0.2)
+indeces <- seq(burnin, dim(mcmc_samples_adapt$scales)[1], 1)
+new_startscales <- colMeans(mcmc_samples_adapt$scales[indeces,])
+
+mcmc_samples <- regress(Y = Y,
+                        X = X,
+                        model = "pois",
+                        startvals = new_startvals,
+                        scales = new_startscales,
+                        adapt = F)
+
+head(mcmc_samples)
+```
+
+When 'adapt' is set to 'FALSE', the function returns the MCMC chains. With enough iterations, the chains will likely contain good samples of the posterior distributions corresponding to the model's parameters. These can be inspected further with standard tools, including those in the 'coda' MCMC package. Here will will simply plot the chains as line-plots and then plot some density estimates to get a quick look at the results:
+
+```{r, fig.width = 7, fig.height = 4}
+burnin <- floor(dim(mcmc_samples)[1] * 0.2)
+indeces <- seq(burnin, dim(mcmc_samples)[1], 1)
+
+plot(mcmc_samples[indeces, 1], type = "l")
+plot(mcmc_samples[indeces, 2], type = "l")
+plot(density(mcmc_samples[indeces, 1]))
+plot(density(mcmc_samples[indeces, 2]))
+```
+
+As the plots show, the chains are not fully stable and the density estimates are biased, but these indicators of poor convergence are the result of too few MCMC iterations. With more iterations, the chains will stabilize and well-behaved density estimates can be obtained.
+
+Still, it is important to highlight that the posterior estimate for the key rate parameter---'beta'---is biased toward zero. This attenuation is a known effect of chronological uncertainty on count models. The regression does, however, produce an estimate with the correct sign (negative in this example) and the posterior distribution is sufficiently far from zero that the result could be considered statistically significant at the 99% confidence level or higher. Stable MCMC chains would be required in order to get a suitable confidence estimate, of course.
+
+The bias can be reduced further if we limit the analysis to the temporal span of the original simulation process. In practice, a similar subsetting of the data could be justified by gathering data outside a given temporal interval of analytical interest and/or limiting analyses to a subinterval of the available data. It may be a debatable decision in any given case and more research is required. Nevertheless, for the sake of this demonstration, the code below subsets the simulated data, limiting the analysis to the original temporal interval (5000--4001 BP):
+
+```{r}
+indeces <- which(sim_sequences$new_times <= 5000 &
+                sim_sequences$new_times >= 4001)
+
+mcmc_samples_adapt <- regress(Y = Y[indeces,],
+                            X = X[indeces,],
+                            model = "pois",
+                            startvals = startvals,
+                            scales = startscales,
+                            adapt = T)
+
+burnin <- floor(dim(mcmc_samples_adapt$samples)[1] * 0.2)
+indeces <- seq(burnin, dim(mcmc_samples_adapt$samples)[1], 1)
+new_startvals <- colMeans(mcmc_samples_adapt$samples[indeces,])
+
+burnin <- floor(dim(mcmc_samples_adapt$scales)[1] * 0.2)
+indeces <- seq(burnin, dim(mcmc_samples_adapt$scales)[1], 1)
+new_startscales <- colMeans(mcmc_samples_adapt$scales[indeces,])
+
+mcmc_samples <- regress(Y = Y[indeces,],
+                        X = X[indeces,],
+                        model = "pois",
+                        startvals = new_startvals,
+                        scales = new_startscales,
+                        adapt = F)
+
+head(mcmc_samples)
+```
+
+As the plots below indicate, the initial bias is significantly reduced and the true parameter estimate ('beta', which was set to -0.004 above) is within the 95% credible interval of the estimated posterior distribution. Again, many more MCMC iterations will be required in order to arrive at good estimates of posterior distributions for the model parameters. The additional iterations will come from increasing the number of randomly sampled probable event count sequences. As a result, an even better estimate of the overall chronological uncertainty in the data can be obtained and then propagated up to the regression model parameter estimates. Additionally, using a Negative-Binomial (NB-REC) model instead would further reduce the bias, especially if a subinterval is not selected for some reason.
+
+```{r, fig.width = 7, fig.height = 4}
+burnin <- floor(dim(mcmc_samples)[1] * 0.2)
+indeces <- seq(burnin, dim(mcmc_samples)[1], 1)
+
+plot(mcmc_samples[indeces, 1], type = "l")
+plot(mcmc_samples[indeces, 2], type = "l")
+plot(density(mcmc_samples[indeces, 1]))
+plot(density(mcmc_samples[indeces, 2]))
 ```

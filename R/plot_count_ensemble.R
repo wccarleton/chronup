@@ -19,23 +19,36 @@ plot_count_ensemble <- function(count_ensemble,
                                 use_ggplot2 = FALSE,
                                 axis_x_res = 100,
                                 axis_y_res = 1){
-    # Check for ggplot2
-    count_ensemble_na <- count_ensemble
-    count_ensemble_na[which(count_ensemble_na == 0)] <- NA
+    nevents <- sum(count_ensemble[,1])
+
+    event_count_freqs <- t(apply(count_ensemble,
+                                1,
+                                chronup::tabulate_freqs,
+                                nevents = nevents))
+
+    max_count <- chronup::find_max_count(event_count_freqs)
+
+    event_count_freqs_na <- event_count_freqs
+
+    event_count_freqs_na[which(event_count_freqs_na == 0)] <- NA
+
+    event_count_freqs_na <- event_count_freqs_na[, 2:max_count]
+
     if(use_ggplot2){
         ggplot2_installed <- requireNamespace("ggplot2", quietly = TRUE)
         if(ggplot2_installed){
-            ncols <- dim(count_ensemble_na)[2]
-            count_ensemble_df <- as.data.frame(cbind(times,
-                                                    count_ensemble_na))
+            ncols <- dim(event_count_freqs_na)[2]
+            event_count_freqs_df <- as.data.frame(cbind(times,
+                                                    event_count_freqs_na))
             colnames <- c("x",
                         as.character(1:ncols))
-            names(count_ensemble_df) <- colnames
-            count_ensemble_df_long <- tidyr::pivot_longer(count_ensemble_df,
-                                                    cols = 2:ncols,
-                                                    names_to = "y",
-                                                    values_to = "frequency")
-            p <- ggplot2::ggplot(data = count_ensemble_df_long,
+            names(event_count_freqs_df) <- colnames
+            event_count_freqs_df_long <- tidyr::pivot_longer(
+                                    event_count_freqs_df,
+                                    cols = 2:ncols,
+                                    names_to = "y",
+                                    values_to = "frequency")
+            p <- ggplot2::ggplot(data = event_count_freqs_df_long,
                         mapping = ggplot2::aes(x = .data$x, y = .data$y)) +
                 ggplot2::geom_raster(mapping = ggplot2::aes(fill = frequency)) +
                 ggplot2::scale_fill_viridis_c(option = "B",
@@ -50,16 +63,18 @@ plot_count_ensemble <- function(count_ensemble,
             stop("ggplot2 not installed.")
         }
     }else{
-        image(x = 1:dim(count_ensemble_na)[1],
-            y = 1:dim(count_ensemble_na)[2],
-            z = count_ensemble_na,
+        image(x = 1:dim(event_count_freqs_na)[1],
+            y = 1:dim(event_count_freqs_na)[2],
+            z = event_count_freqs_na,
             useRaster = T,
-            col = grDevices::hcl.colors(n = 10, palette = "viridis", alpha = 0.9),
+            col = grDevices::hcl.colors(n = 10,
+                                        palette = "viridis",
+                                        alpha = 0.9),
             axes = FALSE,
             xlab = "Time",
             ylab = "Count")
-        axis_y_at <- seq(1, dim(count_ensemble_na)[2], axis_y_res)
-        axis_x_at <- seq(1, dim(count_ensemble_na)[1], axis_x_res)
+        axis_y_at <- seq(1, dim(event_count_freqs_na)[2], axis_y_res)
+        axis_x_at <- seq(1, dim(event_count_freqs_na)[1], axis_x_res)
         axis(1, at = axis_x_at, labels = times[axis_x_at])
         axis(2, at = axis_y_at)
     }
