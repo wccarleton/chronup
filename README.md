@@ -1,10 +1,29 @@
-Chronological Uncertainty Propagation Toolkit
-================
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 # The chronup R package
 
 Chronological uncertainty poses a ubiquitous challenge for sciences of the past. Nearly all of the observations we can make about past people, animals, plants, objects, and events need to be dated, and those dates are usually uncertain because the chronometric methods available come with uncertainty. Some methods come with relatively small uncertainties, like dendrochronology, which can yield age estimates with single-year errors. Others come with much higher levels of uncertainty, like radiocarbon dating, which can yield age estimates with errors ranging from decades to centuries or more. These uncertainties have long been acknowledged by the scientific community but are usually left out of formal analyses. As a result, many studies of the past contain a hidden bias. Recently, some effort has been directed toward understanding the impact that chronological uncertainty has on quantitative methods commonly used in fields like archaeology and palaeoclimatology and, consequently, the impact it has on our current understanding of the past. At the same time, statistical approaches with better handling of chronological uncertainty are being investigated and developed. One methodological avenue actively being explored involves uncertainty (error) propagation, and the R package chronup is being developed to provide access to the statistical tools produced as part of that ongoing research.
+
+# Relevant research
+
+There are a few published papers so far that are directly relevant to this package. They are as follows:
+
+-   Stewart, M., Carleton, W., Groucutt, H. (2021) [DOI: 10.1038/s41467-021-21201-8](https://dx.doi.org/10.1038/s41467-021-21201-8)
+
+-   Carleton W. and Groucutt, H. (2020) [DOI: 10.1177/0959683620981700](https://dx.doi.org/10.1177/0959683620981700)
+
+-   Carleton, W. (2020) [DOI: 10.1002/jqs.3256](https://onlinelibrary.wiley.com/doi/full/10.1002/jqs.3256)
+
+# Installation
+
+This package is currently in development and at a pre-release stage. Still, it can be installed and used in R as follows:
+
+    library(devtools)
+    install_github("wccarleton/chronup")
+
+If you find bugs, have code suggestions, or feature requests, please contact me at <ccarleton@protonmail.com>. Once the package is ready for initial release, I will use GitHub's formal issue tracking system to handle bugs and feature requests.
+
+Anyone interested in contributing can also feel free to contact me. Help would certainly be appreciated!
 
 # Basic workflow
 
@@ -40,7 +59,7 @@ times <- 5000:4001
 beta <- -0.004
 process <- exp(1:nintervals * beta)
 nevents <- 200
-nsamples <- 10000
+nsamples <- 50000
 sim_sequences <- simulate_event_counts(process = process,
                             times = times,
                             nevents = nevents,
@@ -64,7 +83,7 @@ plot(y = process,
     ylab = "Process Level")
 ```
 
-<img src="man/figures/README-unnamed-chunk-4-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-3-1.png" width="100%" />
 
 As we would expect, the process is an exponential function that decays at the rate 'beta'.
 
@@ -79,7 +98,7 @@ plot(y = sim_sequences$counts$Count,
     ylab = "Count")
 ```
 
-<img src="man/figures/README-unnamed-chunk-5-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-4-1.png" width="100%" />
 
 Lastly, we can plot the joint-density of event count and time in a way that includes the uncertainties involved. The chronup package provides a plotting function, chronup::plot\_count\_ensemble, for this purpose. It takes two main arguments, 'count\_ensemble' and 'times'. The first of these is going to be the count ensemble matrix output by the simulation function we just used, and the second will be another output from that function called 'new\_times'. The latter is a vector of time-stamps that correspond to the rows of the count ensemble matrix. These will be different than the original time-stamps passed to the simulation function as the argument 'times'. The differences arise because the chronological uncertainty associated with individual event times ultimately means that the span of probable time-stamps covered by the simulated event count sequence is longer than the span covered by the original event generating process---a phenomenon sometimes called 'temporal spread'.
 
@@ -88,11 +107,11 @@ plot_count_ensemble(count_ensemble = sim_sequences$count_ensemble,
                     times = sim_sequences$new_times)
 ```
 
-<img src="man/figures/README-unnamed-chunk-6-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-5-1.png" width="100%" />
 
     #> NULL
 
-In this plot, chronological uncertainty is captured by a heat map. The colours in the heatmap indicate the relative probability of count-time pairings based on the sample represented by the count ensemble. Warmer colours indicate higher relative probabilities whereas cooler colours indicate lower relative probabilities. So, it is important not to allow your eye to be fooled into following only the peaks and troughs of the plot in the y-axis dimension. The z-axis is crucial and it is represented in the plot by colour. We can see the overall shape of the event generating process represented in the plot, but it is not a perfect representation. There are features in the plot that do not reflect the true underlying process. This plot represents both event counts *and* chronological uncertainty about individual event times. Still, it provides useful visual information, like the fact that there is a relatively high probability (hot colours) that the count is exactly one around 5000--4800 BP, which is what we would expect given that the highest part of the exponential function used to produce the data is at 5000 BP. At the same time, though, the probability that the count is ~3--5 in that interval is relatively low. This is also something that we would expect because the sample size is small---i.e., we only drew 100 events from the process at an annual resolution over a thousand year period, so the probability that a large number of those samples co-occurred in time often enough to create high y-axis peaks in this plot is likewise small.
+In this plot, chronological uncertainty is captured by a heat map. The colours in the heatmap indicate the relative probability of count-time pairings based on the sample represented by the count ensemble. Warmer colours indicate higher relative probabilities whereas cooler colours indicate lower relative probabilities. So, it is important not to allow your eye to be fooled into following only the peaks and troughs of the plot in the y-axis dimension. The z-axis is crucial and it is represented in the plot by colour. We can see the overall shape of the event generating process represented in the plot, but it is not a perfect representation. There are features in the plot that do not reflect the true underlying process. This plot represents both event counts *and* chronological uncertainty about individual event times. Still, it provides useful visual information, like the fact that there is a relatively high probability (hot colours) that the count is exactly one around 5000--4800 BP, which is what we would expect given that the highest part of the exponential function used to produce the data is at 5000 BP. At the same time, though, the probability that the count is &gt;5 in that interval is relatively low. This is also something that we would expect because the sample size is small---i.e., we only drew 100 events from the process at an annual resolution over a thousand year period, so the probability that a large number of those samples co-occurred in time often enough to create high y-axis peaks in this plot is likewise small.
 
 With the simulated data in hand, and the plots showing what we expected to see, we can now run a simple chronup regression. The package provides a function for that purpose called chronup::regress. The regression function is Bayesian and uses an MCMC approach to uncertainty propagation. An MCMC approach to uncertainty effectively just means sampling probable values for the data, and then fitting a regression model to the samples to produce posterior distributions for the model parameters that reflect the variability in the samples. In this case, we are focusing on variability derived from chronological uncertainty about event times, but in general the sampling process could be used to incorporate any kind of uncertainty as long as we have representative distributions to draw samples from. It is also worth highlighting here that for this demonstration we are only looking at uncertainty in the event counts, the dependent variable.
 
@@ -120,9 +139,9 @@ X <- matrix(
         nrow = n)
 
 dim(Y)
-#> [1]  1301 10000
+#> [1]  1372 50000
 dim(X)
-#> [1]  1301 20000
+#> [1]   1372 100000
 
 Y[1:5, 1:10]
 #>      [,1] [,2] [,3] [,4] [,5] [,6] [,7] [,8] [,9] [,10]
@@ -181,43 +200,43 @@ mcmc_samples <- regress(Y = Y,
 #> 
 
 head(mcmc_samples)
-#>           [,1]          [,2]
-#> [1,] -1.320313 -0.0009553337
-#> [2,] -1.320313 -0.0009553337
-#> [3,] -1.320313 -0.0009553337
-#> [4,] -1.246605 -0.0008893117
-#> [5,] -1.246605 -0.0008893117
-#> [6,] -1.246605 -0.0008893117
+#>           [,1]         [,2]
+#> [1,] -1.228793 -0.001180995
+#> [2,] -1.228793 -0.001180995
+#> [3,] -1.228793 -0.001180995
+#> [4,] -1.228793 -0.001180995
+#> [5,] -1.228793 -0.001180995
+#> [6,] -1.216770 -0.001140104
 ```
 
 When 'adapt' is set to 'FALSE', the function returns the MCMC chains. With enough iterations, the chains will likely contain good samples of the posterior distributions corresponding to the model's parameters. These can be inspected further with standard tools, including those in the 'coda' MCMC package. Here will will simply plot the chains as line-plots and then plot some density estimates to get a quick look at the results:
 
 ``` r
 burnin <- floor(dim(mcmc_samples)[1] * 0.2)
-indeces <- seq(burnin, dim(mcmc_samples)[1], 1)
+kept <- seq(burnin, dim(mcmc_samples)[1], 1)
 
-plot(mcmc_samples[indeces, 1], type = "l")
+plot(mcmc_samples[kept, 1], type = "l")
 ```
 
-<img src="man/figures/README-unnamed-chunk-11-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-10-1.png" width="100%" />
 
 ``` r
-plot(mcmc_samples[indeces, 2], type = "l")
+plot(mcmc_samples[kept, 2], type = "l")
 ```
 
-<img src="man/figures/README-unnamed-chunk-11-2.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-10-2.png" width="100%" />
 
 ``` r
-plot(density(mcmc_samples[indeces, 1]))
+plot(density(mcmc_samples[kept, 1]))
 ```
 
-<img src="man/figures/README-unnamed-chunk-11-3.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-10-3.png" width="100%" />
 
 ``` r
-plot(density(mcmc_samples[indeces, 2]))
+plot(density(mcmc_samples[kept, 2]))
 ```
 
-<img src="man/figures/README-unnamed-chunk-11-4.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-10-4.png" width="100%" />
 
 As the plots show, the chains are not fully stable and the density estimates are biased, but these indicators of poor convergence are the result of too few MCMC iterations. With more iterations, the chains will stabilize and well-behaved density estimates can be obtained.
 
@@ -226,11 +245,11 @@ Still, it is important to highlight that the posterior estimate for the key rate
 The bias can be reduced further if we limit the analysis to the temporal span of the original simulation process. In practice, a similar subsetting of the data could be justified by gathering data outside a given temporal interval of analytical interest and/or limiting analyses to a subinterval of the available data. It may be a debatable decision in any given case and more research is required. Nevertheless, for the sake of this demonstration, the code below subsets the simulated data, limiting the analysis to the original temporal interval (5000--4001 BP):
 
 ``` r
-indeces <- which(sim_sequences$new_times <= 5000 &
-                sim_sequences$new_times >= 4001)
+subinterval <- which(sim_sequences$new_times <= 5000 &
+                    sim_sequences$new_times >= 4001)
 
-mcmc_samples_adapt <- regress(Y = Y[indeces,],
-                            X = X[indeces,],
+mcmc_samples_adapt <- regress(Y = Y[subinterval,],
+                            X = X[subinterval,],
                             model = "pois",
                             startvals = startvals,
                             scales = startscales,
@@ -245,8 +264,8 @@ burnin <- floor(dim(mcmc_samples_adapt$scales)[1] * 0.2)
 indeces <- seq(burnin, dim(mcmc_samples_adapt$scales)[1], 1)
 new_startscales <- colMeans(mcmc_samples_adapt$scales[indeces,])
 
-mcmc_samples <- regress(Y = Y[indeces,],
-                        X = X[indeces,],
+mcmc_samples <- regress(Y = Y[subinterval,],
+                        X = X[subinterval,],
                         model = "pois",
                         startvals = new_startvals,
                         scales = new_startscales,
@@ -255,39 +274,39 @@ mcmc_samples <- regress(Y = Y[indeces,],
 
 head(mcmc_samples)
 #>           [,1]         [,2]
-#> [1,] 0.4106506 -0.003233014
-#> [2,] 0.2986423 -0.003068006
-#> [3,] 0.2986423 -0.003068006
-#> [4,] 0.2986423 -0.003068006
-#> [5,] 0.2986423 -0.003068006
-#> [6,] 0.2986423 -0.003068006
+#> [1,] 0.6549716 -0.003650824
+#> [2,] 0.6549716 -0.003650824
+#> [3,] 0.6549716 -0.003650824
+#> [4,] 0.6549716 -0.003650824
+#> [5,] 0.6549716 -0.003650824
+#> [6,] 0.6549716 -0.003650824
 ```
 
 As the plots below indicate, the initial bias is significantly reduced and the true parameter estimate ('beta', which was set to -0.004 above) is within the 95% credible interval of the estimated posterior distribution. Again, many more MCMC iterations will be required in order to arrive at good estimates of posterior distributions for the model parameters. The additional iterations will come from increasing the number of randomly sampled probable event count sequences. As a result, an even better estimate of the overall chronological uncertainty in the data can be obtained and then propagated up to the regression model parameter estimates. Additionally, using a Negative-Binomial (NB-REC) model instead would further reduce the bias, especially if the complete time domain of the event count ensemble is being analyzed instead of a subinterval.
 
 ``` r
 burnin <- floor(dim(mcmc_samples)[1] * 0.2)
-indeces <- seq(burnin, dim(mcmc_samples)[1], 1)
+kept <- seq(burnin, dim(mcmc_samples)[1], 1)
 
-plot(mcmc_samples[indeces, 1], type = "l")
+plot(mcmc_samples[kept, 1], type = "l")
 ```
 
-<img src="man/figures/README-unnamed-chunk-13-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-12-1.png" width="100%" />
 
 ``` r
-plot(mcmc_samples[indeces, 2], type = "l")
+plot(mcmc_samples[kept, 2], type = "l")
 ```
 
-<img src="man/figures/README-unnamed-chunk-13-2.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-12-2.png" width="100%" />
 
 ``` r
-plot(density(mcmc_samples[indeces, 1]))
+plot(density(mcmc_samples[kept, 1]))
 ```
 
-<img src="man/figures/README-unnamed-chunk-13-3.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-12-3.png" width="100%" />
 
 ``` r
-plot(density(mcmc_samples[indeces, 2]))
+plot(density(mcmc_samples[kept, 2]))
 ```
 
-<img src="man/figures/README-unnamed-chunk-13-4.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-12-4.png" width="100%" />
