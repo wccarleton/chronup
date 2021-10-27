@@ -140,7 +140,8 @@ simulate_event_counts <- function(process,
                             sample_time_range[1] - abs(binning_resolution),
                             binning_resolution)
 
-            new_timestamps <- chronup::mids(new_breaks)
+            new_timestamps <- new_breaks[-length(new_breaks)] +
+                                (diff(new_breaks)/2)
 
             new_span <- length(new_breaks) - 1
         }else{
@@ -156,7 +157,8 @@ simulate_event_counts <- function(process,
                             sample_time_range[2] + abs(binning_resolution),
                             binning_resolution)
 
-            new_timestamps <- chronup::mids(new_breaks)
+            new_timestamps <- new_breaks[-length(new_breaks)] +
+                                (diff(new_breaks)/2)
 
             new_span <- length(new_breaks) - 1
         }
@@ -175,7 +177,8 @@ simulate_event_counts <- function(process,
                             binning_resolution)
         }
 
-        new_timestamps <- chronup::mids(new_breaks)
+        new_timestamps <- new_breaks[-length(new_breaks)] +
+                            (diff(new_breaks)/2)
     }
 
     if(bigmatrix){
