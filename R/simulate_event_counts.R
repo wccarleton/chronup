@@ -136,11 +136,13 @@ simulate_event_counts <- function(process,
                             sample_time_range[1],
                             resolution)
 
-            new_span <- length(new_times)
-
             new_breaks <- seq(sample_time_range[2],
                             sample_time_range[1] - abs(binning_resolution),
                             binning_resolution)
+
+            new_timestamps <- chronup::mids(new_breaks)
+
+            new_span <- length(new_breaks) - 1
         }else{
             chronun_matrix <- approx_c14(c14post,
                                         sample_time_range[1],
@@ -150,14 +152,17 @@ simulate_event_counts <- function(process,
                             sample_time_range[2],
                             resolution)
 
-            new_span <- length(new_times)
-
             new_breaks <- seq(sample_time_range[1],
                             sample_time_range[2] + abs(binning_resolution),
                             binning_resolution)
+
+            new_timestamps <- chronup::mids(new_breaks)
+
+            new_span <- length(new_breaks) - 1
         }
     }else{
         simc14 <- NULL
+        # FIXME new_times undefined here
         new_span <- length(new_times)
         new_time_range <- range(new_times)
         if(BP){
@@ -169,6 +174,8 @@ simulate_event_counts <- function(process,
                             sample_time_range[2] + abs(binning_resolution),
                             binning_resolution)
         }
+
+        new_timestamps <- chronup::mids(new_breaks)
     }
 
     if(bigmatrix){
@@ -200,6 +207,7 @@ simulate_event_counts <- function(process,
         parallel::stopCluster(cl)
         return(list(count_ensemble =  paste(wd,"count_ensemble_desc",sep=""),
                     new_times = new_times,
+                    new_timestamps = new_timestamps,
                     counts = true_event_counts,
                     simc14 = simc14))
     }else if(parallel & !bigmatrix){
@@ -220,6 +228,7 @@ simulate_event_counts <- function(process,
         parallel::stopCluster(cl)
         return(list(count_ensemble = count_ensemble,
                     new_times = new_times,
+                    new_timestamps = new_timestamps,
                     counts = true_event_counts,
                     simc14 = simc14))
     }else if(!parallel & bigmatrix){
@@ -232,6 +241,7 @@ simulate_event_counts <- function(process,
                     bigmatrix = paste(wd,"count_ensemble_desc",sep=""))
         return(list(count_ensemble =  paste(wd,"count_ensemble_desc",sep=""),
                     new_times = new_times,
+                    new_timestamps = new_timestamps,
                     counts = true_event_counts,
                     simc14 = simc14))
     }else if(!parallel & !bigmatrix){
@@ -244,6 +254,7 @@ simulate_event_counts <- function(process,
                             bigmatrix = NULL)
         return(list(count_ensemble = count_ensemble,
                     new_times = new_times,
+                    new_timestamps = new_timestamps,
                     counts = true_event_counts,
                     simc14 = simc14))
     }
