@@ -198,11 +198,10 @@ simulate_event_counts <- function(process,
                     breaks = new_breaks,
                     bigmatrix = paste(wd,"count_ensemble_desc",sep=""))
         parallel::stopCluster(cl)
-        return(list(
-                count_ensemble =  paste(wd,"count_ensemble_desc",sep=""),
-                new_times = new_times,
-                counts = true_event_counts,
-                simc14 = simc14))
+        return(list(count_ensemble =  paste(wd,"count_ensemble_desc",sep=""),
+                    new_times = new_times,
+                    counts = true_event_counts,
+                    simc14 = simc14))
     }else if(parallel & !bigmatrix){
         ncores <- parallel::detectCores()
         cl <- parallel::makeCluster(ncores - 1)
