@@ -18,8 +18,9 @@
 #'  = F, then this matrix must be included.
 #' @param new_times A vector of times corresponding to the rows in the chronun
 #'  matrix.
-#' @param bigmatrix A character vector containing a path pointing to a
-#'  'bigmemory' matrix descriptor file, or NULL (default).
+#' @param bigmatrix A character vector containing a path pointing to folder for
+#'  storing the bigmemory' matrix descriptor file and matrix. Default is NULL,
+#'  in which case it is assumed that a bigmatrix is not being used.
 #' @param parallel Logical (default = T). Use parallel (multiple processors) to
 #'  speed up computation?
 #' @return A list with 1) a matrix containing probable event count sequences
@@ -35,20 +36,26 @@ simulate_event_counts <- function(process,
                                 times,
                                 nevents,
                                 nsamples,
+                                interval = NULL,
                                 binning_resolution = -1,
                                 BP = T,
                                 c14 = T,
                                 chronun_matrix = NULL,
                                 new_times = NULL,
-                                bigmatrix = T,
+                                bigmatrix = NULL,
                                 parallel = T){
 
     #check user options for required packages
     #big memory
-    if(bigmatrix){
+    if(is.null(bigmatrix)){
+        big <- F
+    }else{
+        big <- T
+    }
+    if(big){
         bigmemory_installed <- requireNamespace("bigmemory", quietly = TRUE)
         if(!bigmemory_installed){
-            stop("package 'bigmemory' is required if bigmatrix = T")
+            stop("package 'bigmemory' is required if bigmatrix is not NULL")
         }
     }
 
@@ -70,7 +77,7 @@ simulate_event_counts <- function(process,
 
     #check timescale and issue warning
     if(BP & (binning_resolution > 0) ){
-        warning("Binning resolution should not be positive if BP = T because time indeces should count down toward the present. You may get unexpected results.")
+        warning("Binning resolution should be negative if BP = T because time indeces should count down toward the present. You may get unexpected results.")
     }
 
     #check for chronological error matrix
@@ -84,8 +91,10 @@ simulate_event_counts <- function(process,
     }
 
     #set some global parameters
+    ##paths
     wd <- paste(getwd(),"/",sep="")
 
+    ##other params
     resolution <- mean(diff(times))
 
     start <- times[1]
@@ -97,11 +106,7 @@ simulate_event_counts <- function(process,
                         replace = T,
                         prob = process)
 
-    if(BP){
-        breaks <- seq(start, end + binning_resolution, binning_resolution)
-    }else{
-        breaks <- seq(start, end + binning_resolution, binning_resolution)
-    }
+    breaks <- seq(start, end + binning_resolution, binning_resolution)
 
     nbins <- length(breaks) - 1
 
@@ -181,18 +186,18 @@ simulate_event_counts <- function(process,
                             (diff(new_breaks)/2)
     }
 
-    if(bigmatrix){
+    if(big){
         count_ensemble <- bigmemory::filebacked.big.matrix(
                             nrow = new_span,
                             ncol = nsamples,
-                            backingpath = wd,
+                            backingpath = bigmatrix,
                             backingfile = "count_ensemble_mat",
                             descriptorfile = "count_ensemble_desc")
     }
 
     message("Simulating event count sequences.")
 
-    if(parallel & bigmatrix){
+    if(parallel & big){
         ncores <- parallel::detectCores()
         cl <- parallel::makeCluster(ncores - 1)
         parallel::clusterEvalQ(cl,{
@@ -206,14 +211,18 @@ simulate_event_counts <- function(process,
                     chronun_matrix = chronun_matrix,
                     times = new_times,
                     breaks = new_breaks,
-                    bigmatrix = paste(wd,"count_ensemble_desc",sep=""))
+                    bigmatrix = paste(bigmatrix,
+                                    "count_ensemble_desc",
+                                    sep=""))
         parallel::stopCluster(cl)
-        return(list(count_ensemble =  paste(wd,"count_ensemble_desc",sep=""),
+        return(list(count_ensemble = paste(bigmatrix,
+                                        "count_ensemble_desc",
+                                        sep=""),
                     new_times = new_times,
                     new_timestamps = new_timestamps,
                     counts = true_event_counts,
                     simc14 = simc14))
-    }else if(parallel & !bigmatrix){
+    }else if(parallel & !big){
         ncores <- parallel::detectCores()
         cl <- parallel::makeCluster(ncores - 1)
         parallel::clusterEvalQ(cl,{
@@ -234,20 +243,24 @@ simulate_event_counts <- function(process,
                     new_timestamps = new_timestamps,
                     counts = true_event_counts,
                     simc14 = simc14))
-    }else if(!parallel & bigmatrix){
+    }else if(!parallel & big){
         pbapply::pbsapply(
                     X = 1:nsamples,
                     FUN = chronup::sample_event_counts,
                     chronun_matrix = chronun_matrix,
                     times = new_times,
                     breaks = new_breaks,
-                    bigmatrix = paste(wd,"count_ensemble_desc",sep=""))
-        return(list(count_ensemble =  paste(wd,"count_ensemble_desc",sep=""),
+                    bigmatrix = paste(bigmatrix,
+                                    "count_ensemble_desc",
+                                    sep=""))
+        return(list(count_ensemble =  paste(bigmatrix,
+                                        "count_ensemble_desc",
+                                        sep=""),
                     new_times = new_times,
                     new_timestamps = new_timestamps,
                     counts = true_event_counts,
                     simc14 = simc14))
-    }else if(!parallel & !bigmatrix){
+    }else if(!parallel & !big){
         count_ensemble <- pbapply::pbsapply(
                             X = 1:nsamples,
                             FUN = chronup::sample_event_counts,
