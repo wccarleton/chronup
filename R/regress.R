@@ -188,7 +188,6 @@ regress <- function(Y,
             }
         }
     }
-    alarm()
     if (adapt){
         return(list(
                 samples = chain,

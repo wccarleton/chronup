@@ -28,7 +28,7 @@
 #'  ensemble); 2) a dataframe containing the true (chronological-error-free)
 #'  event-count sample; 3) a vector of time-stamps corresponding to the rows in
 #'  the event count ensemble matrix; and 4) a vector of simulated uncalibrated
-#'  radiocarbon dates (NULL is c14 == FALSE).
+#'  radiocarbon dates (NULL if c14 == FALSE).
 #' @import pbapply graphics
 #' @export
 

@@ -1,0 +1,212 @@
+---
+title: "getting-started"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{getting-started}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+# Overview
+
+This document describes a simple pipeline for analyzing a radiocarbon-date database using the `chronup` package. Assuming you have a .csv file stored somewhere that contains a set of radiocarbon-dated events, you should be able to follow the steps outlined below to
+
+1. create a radiocarbon-dated event count ensemble (RECE);
+2. plot the RECE;
+3. run a regression with a count-based model; and,
+4. visualize the output.
+
+# Setup
+
+First, load the `chronup` library,
+
+```{r setup}
+library(chronup)
+```
+
+Next, we will simulate some radiocarbon dates using the `chronup::simulate_event_counts` function. This function could be used to create an event count ensemble (RECE) from a simulated or theoretical process, but here we are only using it to produce a set of simulated uncalibrated radiocarbon dated events based on a simple exponential process. We will then take those uncalibrated dates and walk through the process of creating a RECE using other `chronup` functions in a way that would mirror a standard workflow given a set of real dates. Skip this step if you already have data.
+
+```{r simulate-dates}
+nintervals <- 1000 # number of time bins
+times <- 5000:4001
+beta <- -0.004
+process <- exp(1:nintervals * beta)
+nevents <- 100
+nsamples <- 5000 # number of probable event count sequences, but see below
+
+simdata <- chronup::simulate_event_counts(process = process,
+                                        times = times,
+                                        nevents = nevents,
+                                        nsamples = nsamples,
+                                        bigmatrix = NULL,
+                                        parallel = F)
+
+uncal_dates <- simdata$simc14
+names(uncal_dates) <- c("age", "error")
+```
+
+If you do have data in-hand, load the relevant .csv file,
+
+```{r, eval=F}
+uncal_dates <- load("PATH_TO_CSV/c14_data.csv")
+```
+
+# Data Preparation
+
+The data should be loaded into R as a single dataframe with two columns, one containing the uncalibrated C14 mean ages and the other containing the associated errors. It should look like this,
+
+```{r print-data}
+head(uncal_dates)
+```
+## Calibrating the Dates
+
+The dataframe can now be passed to the `chronup::build_c14_matrix` function. This function takes the matrix or dataframe containing the dates as its first argument. The next argument tells the function whether to use the BP calendar scale and the last argument is the desired calibration resolution---resolution will be negative if the dates are in the BP scale. We will store the function output in the variable `chronun_matrix` (for `chronological uncertainty matrix`). Importantly, the output is actually a list containing the `chronun_matrix` (with each column containing one sampled calibrated radiocarbon-date density corresponding to one of the events in the dataset) and a vector called `time_range` that indicates the total span of time covered by all of the calibrated radiocarbon date densities included in the `chronun_matrix`. The latter variable can be used to construct a vector of sampled calendar dates, each one corresponding to a row in the `chronun_matrix`.
+
+```{r build-c14-matrix}
+chronun_matrix <- chronup::build_c14_matrix(c14_dates = uncal_dates,
+                                            BP = T,
+                                            resolution = -1)
+```
+## Producing a RECE
+
+The `chronun_matrix` will be used to sample counts sequences and create a RECE. To do that, pass the `chronun_matrix` to the function `chronup::sample_event_counts`. Argument names are important here because this function's first argument is only used in the context of parallel functions---it was designed to make parallel applications easier.
+
+The function takes three other main arguments: `chronun_matrix`, `times`, and `breaks`. The first of these is self-explanatory but be sure to pass the matrix and not the list output above (i.e., pass `chronun_matrix$chronun_matrix`). The second, should be a vector of times corresponding to the times at which the calibrated date densities have been sampled (these refer to the rows of the `chronun_matrix`). The last is an optional vector of bin edges that allow for the RECE to have a different (larger) temporal resolution than the resolution of calibrated date densities.
+
+Since the `times` argument needs to be the vector of dates corresponding to the rows of the `chronun_matrix`, we need to create that vector using the `chronun_matrix$time_span` variable. That variable indicates the total span of time covered by the `chronun_matrix`. Given that we used an annual resolution in the calibration process (see above) we need to pass that as the `by` argument to the built-in `R::seq` function to create the whole expanded vector:
+
+```{r create-time-variable}
+new_times <- seq(chronun_matrix$time_range[1],
+                chronun_matrix$time_range[2],
+                -1)
+```
+
+We will also use decadal instead of annual time bins to speed up computation for this example. So, we need to create a `breaks` variable that defines the bin edges and then pass that as the `breaks` argument to `chronup::sample_event_counts`. Be sure to have the total temporal coverage of the breaks vector include the total span of the calibrated date densities---when changing resolutions as we are doing here, that will likely mean using a range that includes an additional bin to make sure that all potential event times can be binned into the sequence. Failing to span the total time period with the breaks argument will probably cause `chronup::sample_event_counts` to return an error from the underlying `plot::hist` function used to bin the event dates.
+
+```{r new-breaks}
+new_breaks <- seq(chronun_matrix$time_range[1],
+                chronun_matrix$time_range[2] - 10,
+                -10)
+```
+
+The `chronup::sample_event_counts` function will return one probable event count sequence given the chronological uncertainty in the radiocarbon dates for the relevant events. To build an ensemble (the RECE), though, we of course want more than one sample. So, to produce a RECE with J probable count sequences (columns), we can use `R::apply` or `R::parApply` to create the matrix quickly. For this demonstration we will create a small RECE with only 50,000 probable sequences in it (J=50000),
+
+```{r build-rece}
+J = 50000
+
+rece <- pbapply::pbsapply(X = 1:J,
+                    FUN = chronup::sample_event_counts,
+                    chronun_matrix = chronun_matrix$chronun_matrix,
+                    times = new_times,
+                    breaks = new_breaks)
+```
+
+The RECE will now be contained in the variable `rece`. That variable will be a matrix with a number of columns equal to `J` and rows equal to the number of bins defined by the `breaks` argument,
+
+```{r rece-dim}
+dim(rece)
+```
+
+## Plotting a RECE
+
+Now we can plot the RECE using `chronup::plot_count_ensemble` function. The function expects the rece as the first argument and a vector of times corresponding to rece rows as the second. The latter can be created by using the centers of the bin edges used to build the RECE. The function can also take axis resolution arguments (see below) and an optional argument called `use_ggplot2`, which will create a ggplot2 plot object and return it for further manipulation or plotting.
+
+```{r plot-rece}
+mids <- function(x){
+    y <- x[-length(x)] + (diff(x)/2)
+    return(y)
+}
+
+bin_centers <- mids(new_breaks)
+
+chronup::plot_count_ensemble(count_ensemble = rece,
+                            times = bin_centers,
+                            axis_x_res = 10,
+                            axis_y_res = 1)
+```
+
+## Running a Regression
+
+In this section, we will use the RECE created above to run a regression model with the `chronup::regress` function. For this demonstration we will make a couple of simplifying assumptions. First, we we only use one covariate and an intercept in the model. The covariate will refer only to the passage of time (essentially, just the bin_centers) and it will contain no chronological or measurement uncertainty.
+
+To begin, we will create a covariate matrix to pass to the regression function. The covariate matrix will contain the same number of rows as the RECE (i.e., it should be a variable measured at the same times as the event counts) and an integer multiple of the number of columns. The regression function was designed to handle chronological and measurement uncertainty in the covariate, though, so this matrix will seem very redundant in this example. But, if all you are interested in, for instance, is measuring a simple growth rate in the count sequences, this is the process you would use. Note that the covariate below is just the index of the bins scaled by the resolution---the actual date/age associated with each bin isn't relevant here, only the amount of time that the bins represent.
+
+```{r create-x}
+n_rece_samples <- dim(rece)[2]
+n_bins <- dim(rece)[1]
+x0 <- rep(1, n_bins)
+x1 <- (1:n_bins) * 10
+X <- matrix(rep(c(x0, x1), n_rece_samples),
+            nrow = n_bins)
+
+dim(X)
+
+head(X)
+```
+
+Now, the RECE and the X (covariate) matrix can be passed to the `chronup::regress` function to run a regression and estimate the growth (decay in this case) rate of the simulated exponential process used to create the data, or the empirical growth/decay rate of the real data you loaded earlier. We will subset the data to the temporal span of the process (5000:4001 BP, as above). This subsetting should correspond to your research question, of course. So, if you are studying the Neolithic in a given region, alter the start and end dates below as necessary.
+
+```{r subsetting}
+sub_interval <- which(bin_centers <= 5000 &
+                bin_centers >= 4001)
+```
+
+The `chronup::regress` function includes several required and optional arguments (see the man-page). One of the optional arguments is `adapt`, which expects a logical (TRUE or FALSE) and indicates whether you want to use an adaptive MCMC to find the best scales for the proposal distributions. Here, we will assume that `adapt=TRUE`. Another important optional argument is the `model` argument. It takes a string indicating the type of regression model desired. At the moment, the only options are `pois` for a Poisson model, and `nb` for a Negative Binomial model. To speed up computation we will use the Poisson option below, but it is likely the case that you will want to use the `nb` model in practice. Note that the number of parameters will be different between these models and so the starting values and starting proposal distribution scales for the MCMC will have to be set up accordingly. The function will guess starting values if those are left out, but the scales argument must be provided. In the case of the simpler Poisson model, only starting scales for the regression coefficients are required (including the intercept).
+
+```{r regression-adapt}
+startvals <- c(0,0)
+startscales <- c(0.1, 0.0002)
+
+mcmc_samples_adapt <- regress(Y = rece[sub_interval,],
+                            X = X[sub_interval,],
+                            model = "pois",
+                            startvals = startvals,
+                            scales = startscales,
+                            adapt = T)
+```
+
+Next, extract the posterior MCMC chains for the model parameters and the scales tried by the adaptive MCMC. Leaving off some initial burn-in, use the means of the posterior samples and the scales as the starting values and starting scales for another MCMC run,
+
+```{r regression-final}
+burnin <- floor(dim(mcmc_samples_adapt$samples)[1] * 0.2)
+indeces <- seq(burnin, dim(mcmc_samples_adapt$samples)[1], 1)
+new_startvals <- colMeans(mcmc_samples_adapt$samples[indeces,])
+
+burnin <- floor(dim(mcmc_samples_adapt$scales)[1] * 0.2)
+indeces <- seq(burnin, dim(mcmc_samples_adapt$scales)[1], 1)
+new_startscales <- colMeans(mcmc_samples_adapt$scales[indeces,])
+
+mcmc_samples <- regress(Y = rece[sub_interval,],
+                        X = X[sub_interval,],
+                        model = "pois",
+                        startvals = new_startvals,
+                        scales = new_startscales,
+                        adapt = F)
+
+head(mcmc_samples)
+```
+
+Finally, plot the MCMC chains for the model's parameters (regression coefficients) and estimate densities for the posteriors from those samples,
+
+```{r, plot-mcmc, fig.width = 7, fig.height = 4}
+burnin <- floor(dim(mcmc_samples)[1] * 0.2)
+indeces <- seq(burnin, dim(mcmc_samples)[1], 1)
+
+plot(mcmc_samples[indeces, 1],
+        type = "l",
+        main = "MCMC Chain (Intercept)")
+plot(mcmc_samples[indeces, 2],
+        type = "l",
+        main = "MCMC Chain (beta, target rate)")
+plot(density(mcmc_samples[indeces, 1]),
+    main = "Intercept")
+plot(density(mcmc_samples[indeces, 2]),
+    main = "beta, target rate")
+```
