@@ -19,8 +19,11 @@
 #' @param new_times A vector of times corresponding to the rows in the chronun
 #'  matrix.
 #' @param bigmatrix A character vector containing a path pointing to folder for
-#'  storing the bigmemory' matrix descriptor file and matrix. Default is NULL,
+#'  storing the bigmemory matrix descriptor file and matrix. Default is NULL,
 #'  in which case it is assumed that a bigmatrix is not being used.
+#' @param bigfileprefix A character vector that will be used as a prefix for
+#'  naming the bigmemory matrix descriptor file and matrix (*_desc and *_mat
+#'  will be appended). Default is "count_ensemble"---not used if bigmatrix=NULL.
 #' @param parallel Logical (default = T). Use parallel (multiple processors) to
 #'  speed up computation?
 #' @return A list with 1) a matrix containing probable event count sequences
@@ -43,6 +46,7 @@ simulate_event_counts <- function(process,
                                 chronun_matrix = NULL,
                                 new_times = NULL,
                                 bigmatrix = NULL,
+                                bigfileprefix = "count_ensemble",
                                 parallel = T){
 
     #check user options for required packages
@@ -187,12 +191,21 @@ simulate_event_counts <- function(process,
     }
 
     if(big){
+        backingfile <- paste(bigfileprefix,
+                            "_mat",
+                            sep="")
+        descriptorfile <- paste(bigfileprefix,
+                            "_desc",
+                            sep="")
+        descriptorfile_path <- paste(bigmatrix,
+                                descriptorfile,
+                                sep="")
         count_ensemble <- bigmemory::filebacked.big.matrix(
                             nrow = new_span,
                             ncol = nsamples,
                             backingpath = bigmatrix,
-                            backingfile = "count_ensemble_mat",
-                            descriptorfile = "count_ensemble_desc")
+                            backingfile = backingfile,
+                            descriptorfile = descriptorfile)
     }
 
     message("Simulating event count sequences.")
@@ -211,13 +224,9 @@ simulate_event_counts <- function(process,
                     chronun_matrix = chronun_matrix,
                     times = new_times,
                     breaks = new_breaks,
-                    bigmatrix = paste(bigmatrix,
-                                    "count_ensemble_desc",
-                                    sep=""))
+                    bigmatrix = descriptorfile_path)
         parallel::stopCluster(cl)
-        return(list(count_ensemble = paste(bigmatrix,
-                                        "count_ensemble_desc",
-                                        sep=""),
+        return(list(count_ensemble = descriptorfile_path,
                     new_times = new_times,
                     new_timestamps = new_timestamps,
                     counts = true_event_counts,
@@ -250,12 +259,8 @@ simulate_event_counts <- function(process,
                     chronun_matrix = chronun_matrix,
                     times = new_times,
                     breaks = new_breaks,
-                    bigmatrix = paste(bigmatrix,
-                                    "count_ensemble_desc",
-                                    sep=""))
-        return(list(count_ensemble =  paste(bigmatrix,
-                                        "count_ensemble_desc",
-                                        sep=""),
+                    bigmatrix = descriptorfile_path)
+        return(list(count_ensemble = descriptorfile_path,
                     new_times = new_times,
                     new_timestamps = new_timestamps,
                     counts = true_event_counts,
