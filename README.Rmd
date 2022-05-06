@@ -65,7 +65,7 @@ nintervals <- 1000
 times <- 5000:4001
 beta <- -0.004
 process <- exp(1:nintervals * beta)
-nevents <- 200
+nevents <- 500
 nsamples <- 50000
 sim_sequences <- simulate_event_counts(process = process,
                             times = times,
@@ -164,11 +164,11 @@ With 'adapt' set to TRUE, the 'regress' function returns a list with three eleme
 So, now we can establish new startvals and startscales given the results of the adaptive MCMC. We will discard some number of samples as burn-in (say, the first 20%) and then use the average of the remaining samples for the new values:
 
 ```{r}
-burnin <- floor(dim(mcmc_samples_adapt$samples)[1] * 0.2)
+burnin <- floor(dim(mcmc_samples_adapt$samples)[1] * 0.1)
 indeces <- seq(burnin, dim(mcmc_samples_adapt$samples)[1], 1)
 new_startvals <- colMeans(mcmc_samples_adapt$samples[indeces,])
 
-burnin <- floor(dim(mcmc_samples_adapt$scales)[1] * 0.2)
+burnin <- floor(dim(mcmc_samples_adapt$scales)[1] * 0.1)
 indeces <- seq(burnin, dim(mcmc_samples_adapt$scales)[1], 1)
 new_startscales <- colMeans(mcmc_samples_adapt$scales[indeces,])
 
@@ -185,7 +185,7 @@ head(mcmc_samples)
 When 'adapt' is set to 'FALSE', the function returns the MCMC chains. With enough iterations, the chains will likely contain good samples of the posterior distributions corresponding to the model's parameters. These can be inspected further with standard tools, including those in the 'coda' MCMC package. Here will will simply plot the chains as line-plots and then plot some density estimates to get a quick look at the results:
 
 ```{r, fig.width = 7, fig.height = 4}
-burnin <- floor(dim(mcmc_samples)[1] * 0.2)
+burnin <- floor(dim(mcmc_samples)[1] * 0.1)
 kept <- seq(burnin, dim(mcmc_samples)[1], 1)
 
 plot(mcmc_samples[kept, 1], type = "l")
@@ -211,11 +211,11 @@ mcmc_samples_adapt <- regress(Y = Y[subinterval,],
                             scales = startscales,
                             adapt = T)
 
-burnin <- floor(dim(mcmc_samples_adapt$samples)[1] * 0.2)
+burnin <- floor(dim(mcmc_samples_adapt$samples)[1] * 0.1)
 indeces <- seq(burnin, dim(mcmc_samples_adapt$samples)[1], 1)
 new_startvals <- colMeans(mcmc_samples_adapt$samples[indeces,])
 
-burnin <- floor(dim(mcmc_samples_adapt$scales)[1] * 0.2)
+burnin <- floor(dim(mcmc_samples_adapt$scales)[1] * 0.1)
 indeces <- seq(burnin, dim(mcmc_samples_adapt$scales)[1], 1)
 new_startscales <- colMeans(mcmc_samples_adapt$scales[indeces,])
 

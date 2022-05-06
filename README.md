@@ -58,7 +58,7 @@ nintervals <- 1000
 times <- 5000:4001
 beta <- -0.004
 process <- exp(1:nintervals * beta)
-nevents <- 200
+nevents <- 500
 nsamples <- 50000
 sim_sequences <- simulate_event_counts(process = process,
                             times = times,
@@ -138,9 +138,9 @@ X <- matrix(
         nrow = n)
 
 dim(Y)
-#> [1]  1372 50000
+#> [1]  1354 50000
 dim(X)
-#> [1]   1372 100000
+#> [1]   1354 100000
 
 Y[1:5, 1:10]
 #>      [,1] [,2] [,3] [,4] [,5] [,6] [,7] [,8] [,9] [,10]
@@ -174,7 +174,6 @@ mcmc_samples_adapt <- regress(Y = Y,
                             startvals = startvals,
                             scales = startscales,
                             adapt = T)
-#> 
 ```
 
 With 'adapt' set to TRUE, the 'regress' function returns a list with three elements. One is a matrix containing the MCMC chains---each model parameter is represented by a separate column. The second is a matrix containing acceptance rates for all parameters recorded throughout the simulation at regular intervals (defined by other 'regress' function arguments detailed in the manpage for the function). The last element is a matrix containing the scales tried and used by the algorithm. With this information we can run 'regress' again, but use adapted estimates for the new startvals and startscales, which should improve the convergence of the MCMC leading to better samples of posterior distributions with fewer iterations overall. The MCMC chain samples produced with 'adapt' set to 'TRUE', however, should be discarded as burn-in before further analyses.
@@ -182,11 +181,11 @@ With 'adapt' set to TRUE, the 'regress' function returns a list with three eleme
 So, now we can establish new startvals and startscales given the results of the adaptive MCMC. We will discard some number of samples as burn-in (say, the first 20%) and then use the average of the remaining samples for the new values:
 
 ``` r
-burnin <- floor(dim(mcmc_samples_adapt$samples)[1] * 0.2)
+burnin <- floor(dim(mcmc_samples_adapt$samples)[1] * 0.1)
 indeces <- seq(burnin, dim(mcmc_samples_adapt$samples)[1], 1)
 new_startvals <- colMeans(mcmc_samples_adapt$samples[indeces,])
 
-burnin <- floor(dim(mcmc_samples_adapt$scales)[1] * 0.2)
+burnin <- floor(dim(mcmc_samples_adapt$scales)[1] * 0.1)
 indeces <- seq(burnin, dim(mcmc_samples_adapt$scales)[1], 1)
 new_startscales <- colMeans(mcmc_samples_adapt$scales[indeces,])
 
@@ -196,22 +195,21 @@ mcmc_samples <- regress(Y = Y,
                         startvals = new_startvals,
                         scales = new_startscales,
                         adapt = F)
-#> 
 
 head(mcmc_samples)
-#>           [,1]         [,2]
-#> [1,] -1.228793 -0.001180995
-#> [2,] -1.228793 -0.001180995
-#> [3,] -1.228793 -0.001180995
-#> [4,] -1.228793 -0.001180995
-#> [5,] -1.228793 -0.001180995
-#> [6,] -1.216770 -0.001140104
+#>            [,1]         [,2]
+#> [1,] -0.2754904 -0.001234745
+#> [2,] -0.2754904 -0.001234745
+#> [3,] -0.2754904 -0.001234745
+#> [4,] -0.2803615 -0.001234745
+#> [5,] -0.2803615 -0.001234745
+#> [6,] -0.2803615 -0.001234745
 ```
 
 When 'adapt' is set to 'FALSE', the function returns the MCMC chains. With enough iterations, the chains will likely contain good samples of the posterior distributions corresponding to the model's parameters. These can be inspected further with standard tools, including those in the 'coda' MCMC package. Here will will simply plot the chains as line-plots and then plot some density estimates to get a quick look at the results:
 
 ``` r
-burnin <- floor(dim(mcmc_samples)[1] * 0.2)
+burnin <- floor(dim(mcmc_samples)[1] * 0.1)
 kept <- seq(burnin, dim(mcmc_samples)[1], 1)
 
 plot(mcmc_samples[kept, 1], type = "l")
@@ -253,13 +251,12 @@ mcmc_samples_adapt <- regress(Y = Y[subinterval,],
                             startvals = startvals,
                             scales = startscales,
                             adapt = T)
-#> 
 
-burnin <- floor(dim(mcmc_samples_adapt$samples)[1] * 0.2)
+burnin <- floor(dim(mcmc_samples_adapt$samples)[1] * 0.1)
 indeces <- seq(burnin, dim(mcmc_samples_adapt$samples)[1], 1)
 new_startvals <- colMeans(mcmc_samples_adapt$samples[indeces,])
 
-burnin <- floor(dim(mcmc_samples_adapt$scales)[1] * 0.2)
+burnin <- floor(dim(mcmc_samples_adapt$scales)[1] * 0.1)
 indeces <- seq(burnin, dim(mcmc_samples_adapt$scales)[1], 1)
 new_startscales <- colMeans(mcmc_samples_adapt$scales[indeces,])
 
@@ -269,16 +266,15 @@ mcmc_samples <- regress(Y = Y[subinterval,],
                         startvals = new_startvals,
                         scales = new_startscales,
                         adapt = F)
-#> 
 
 head(mcmc_samples)
-#>           [,1]         [,2]
-#> [1,] 0.6549716 -0.003650824
-#> [2,] 0.6549716 -0.003650824
-#> [3,] 0.6549716 -0.003650824
-#> [4,] 0.6549716 -0.003650824
-#> [5,] 0.6549716 -0.003650824
-#> [6,] 0.6549716 -0.003650824
+#>          [,1]         [,2]
+#> [1,] 1.590566 -0.003719868
+#> [2,] 1.590566 -0.003719868
+#> [3,] 1.590566 -0.003719868
+#> [4,] 1.590566 -0.003719868
+#> [5,] 1.625469 -0.003719868
+#> [6,] 1.625469 -0.003719868
 ```
 
 As the plots below indicate, the initial bias is significantly reduced and the true parameter estimate ('beta', which was set to -0.004 above) is within the 95% credible interval of the estimated posterior distribution. Again, many more MCMC iterations will be required in order to arrive at good estimates of posterior distributions for the model parameters. The additional iterations will come from increasing the number of randomly sampled probable event count sequences. As a result, an even better estimate of the overall chronological uncertainty in the data can be obtained and then propagated up to the regression model parameter estimates. Additionally, using a Negative-Binomial (NB-REC) model instead would further reduce the bias, especially if the complete time domain of the event count ensemble is being analyzed instead of a subinterval.
