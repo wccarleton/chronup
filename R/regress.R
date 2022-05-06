@@ -49,7 +49,7 @@ regress <- function(Y,
                     niter = NULL,
                     adapt = T,
                     adapt_amount = 0.1,
-                    adapt_interval = 10,
+                    adapt_interval = 50,
                     adapt_window = c(0.21, 0.25),
                     scales = NULL,
                     priors = NULL){
@@ -106,7 +106,7 @@ regress <- function(Y,
         }
     }
     chain <- array(dim = c(niter + 1, nparams))
-    chain[1,] <- startvals
+    chain[1, ] <- startvals
     if (adapt){
         n_adapts <- floor(niter / adapt_interval)
         acceptance <- array(dim = c(n_adapts, nparams))
@@ -122,45 +122,51 @@ regress <- function(Y,
             diffs <- apply(as.matrix(chain[interval_index, ]), 2, diff)
             acceptance_rate <- 1 - colMeans(diffs == 0)
             acceptance[j / adapt_interval, ] <- acceptance_rate
-            scales <- unlist(
-                        mapply(
-                            adaptScale,
-                            acceptance_rate,
-                            scales,
-                            MoreArgs = list(
-                                        adapt_amount = adapt_amount,
-                                        adapt_window = adapt_window)
-                            )
-                        )
+            scales <- adaptScale(acceptance_rate,
+                                scales,
+                                adapt_amount,
+                                adapt_window)
             scales_matrix[j / adapt_interval, ] <- scales
         }
         # accept step for main regression params
-        proposal_regression <- c(propose_reg(chain[j, 1:nX], scales[1:nX]),
-                                chain[j, -c(1:nX)])
-        # X is a matrix representing uncertainty in the covariates, so we have
-        # to walk over that matrix during the MCMC as well.
+
+        chain[j + 1, ] <- chain[j, ]
+
         x_cols <- 1:nX + (nX * (j - 1))
-        pd_proposal <- posterior(Y[, j],
-                                X[, x_cols],
-                                proposal_regression,
-                                nX,
-                                model,
-                                priors)
-        pd_previous <- posterior(Y[, j],
-                                X[, x_cols],
-                                chain[j, ],
-                                nX,
-                                model,
-                                priors)
-        accept <- exp(pd_proposal - pd_previous)
-        if (runif(1) < accept){
-            chain[j + 1, ] <- proposal_regression
-        }else{
-            chain[j + 1, ] <- chain[j, ]
+
+        # each regression param separately
+        for (l in 1:nX){
+            # propose step
+            proposal_regression <- chain[j + 1, ]
+            proposal_regression[l] <- propose_reg(chain[j + 1, l], scales[l])
+
+            # X is a matrix representing uncertainty in the covariates, so we have
+            # to walk over that matrix during the MCMC as well.
+
+            pd_proposal <- posterior(Y[, j],
+                                    X[, x_cols],
+                                    proposal_regression,
+                                    nX,
+                                    model,
+                                    priors)
+
+            pd_previous <- posterior(Y[, j],
+                                    X[, x_cols],
+                                    chain[j, ],
+                                    nX,
+                                    model,
+                                    priors)
+
+            accept <- exp(pd_proposal - pd_previous)
+
+            if (runif(1) < accept){
+                chain[j + 1, ] <- proposal_regression
+            }
         }
+
         # if the Negative-Binomial model is used, then we have to estimate a
         # 'p' parameter for every 'y' observation (of which there will be N).
-        # Experience has shown that this should be handled in a Gibbs-step as
+        # Experience has shown that this should be handled iteratively as
         # follows.
         if (model == "nb"){
             for (l in 1:N){
@@ -173,17 +179,18 @@ regress <- function(Y,
                                         nX,
                                         model,
                                         priors)
+
                 pd_previous <- posterior(Y[, j],
                                         X[, x_cols],
                                         chain[j + 1, ],
                                         nX,
                                         model,
                                         priors)
+
                 accept <- exp(pd_proposal - pd_previous)
+
                 if(runif(1) < accept){
                     chain[j + 1, ] <- proposal_p
-                }else{
-                    chain[j + 1, ] <- chain[j + 1, ]
                 }
             }
         }
@@ -263,12 +270,11 @@ propose_p <- function(p, v){
     return(p)
 }
 
-adaptScale <- function(acceptance_rate, s, adapt_amount, adapt_window){
-    if(acceptance_rate < adapt_window[1]){
-        return(s * (1 - adapt_amount))
-    }else if(acceptance_rate > adapt_window[2]){
-        return(s * (1 + adapt_amount))
-    }else {
-        return(s)
-    }
+adaptScale <- function(acceptance_rate,
+                    s,
+                    adapt_amount,
+                    adapt_window){
+    s <- s - (s * adapt_amount * (acceptance_rate < adapt_window[1]))
+    s <- s + (s * adapt_amount * (acceptance_rate > adapt_window[2]))
+    return(s)
 }

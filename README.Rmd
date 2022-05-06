@@ -71,7 +71,6 @@ sim_sequences <- simulate_event_counts(process = process,
                             times = times,
                             nevents = nevents,
                             nsamples = nsamples,
-                            bigmatrix = F,
                             parallel = T)
 ```
 

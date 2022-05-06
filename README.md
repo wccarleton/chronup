@@ -64,7 +64,6 @@ sim_sequences <- simulate_event_counts(process = process,
                             times = times,
                             nevents = nevents,
                             nsamples = nsamples,
-                            bigmatrix = F,
                             parallel = T)
 #> Simulating and calibrating c14 dates.
 #> Simulating event count sequences.
