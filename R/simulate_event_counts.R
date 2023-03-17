@@ -81,7 +81,11 @@ simulate_event_counts <- function(process,
 
     #check timescale and issue warning
     if(BP & (binning_resolution > 0) ){
-        warning("Binning resolution should be negative if BP = T because time indeces should count down toward the present. You may get unexpected results.")
+        warn_text <- c("Binning resolution should be negative if BP ",
+                        "= T because time indeces should count down ",
+                        "toward the present. You may get unexpected ",
+                        "results.")
+        warning(warn_text)
     }
 
     #check for chronological error matrix
