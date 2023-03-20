@@ -60,9 +60,7 @@ rece <- function(c14_dates,
             ncores <- parallel::detectCores() - 1
         }
         cl <- parallel::makeCluster(ncores)
-        parallel::clusterEvalQ(cl,{
-                            library(chronup)
-                            })
+        parallel::clusterEvalQ(cl,{library(chronup)})
         event_count_samples <- pblapply(cl = cl,
             X = 1:nsamples,
             FUN = chronup::sample_event_counts,
@@ -94,8 +92,8 @@ rece <- function(c14_dates,
     RECE[which(RECE == 0)] <- NA
 
     # dimensions (leaving out 0-counts)
-    time_bins <- dim(RECE[, 2:max_count])[1]
-    counts <- dim(RECE[, 2:max_count])[2]
+    time_bins <- dim(RECE)[1]#dim(RECE[, 2:max_count])[1]
+    counts <- dim(RECE)[2]#dim(RECE[, 2:max_count])[2]
 
     t_delta <- mean(diff(breaks))
     t_labels <- c(breaks - (t_delta / 2))[-1]
@@ -103,11 +101,11 @@ rece <- function(c14_dates,
     # plotting
     if(plot_it){
         image(x = 1:time_bins,
-            y = 1:counts,
-            z = RECE[, 2:max_count],
+            y = 0:(counts - 1),
+            z = log(RECE),
             useRaster = T,
-            col = grDevices::hcl.colors(n = 10,
-                                        palette = "viridis",
+            col = grDevices::hcl.colors(n = counts,
+                                        palette = "inferno",
                                         alpha = 0.9),
             axes = FALSE,
             xlab = "Time",
@@ -122,5 +120,5 @@ rece <- function(c14_dates,
     colnames(RECE) <- 0:(ncol(RECE) - 1)
 
     return(invisible(list(count_ensemble = event_count_samples,
-                        RECE = RECE))
+                        RECE = RECE)))
 }
