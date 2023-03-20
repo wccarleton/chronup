@@ -12,7 +12,7 @@ regress(
   niter = NULL,
   adapt = T,
   adapt_amount = 0.1,
-  adapt_interval = 10,
+  adapt_interval = 50,
   adapt_window = c(0.21, 0.25),
   scales = NULL,
   priors = NULL

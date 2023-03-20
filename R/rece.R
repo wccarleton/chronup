@@ -12,17 +12,20 @@
 #' @param verbose Logical. The plot takes longer to create for more
 #'  dates/samples. So, this logical parameter indicates whether the user wants
 #'  to see messages indicating progress.
+#' @param plot_it Logical. Should a RECE be plotted (default TRUE).
 #' @param time_axis_index Integer value determining which elements of 
 #'  breaks vector will be included in the x-axis ticks and labels for the 
 #'  optional plot. The axis ticks will refer to time bin midpoints and be drawn 
 #'  and labelled at seq(1, length(breaks) - 1, time_axis_label_index).
-#' @return Invisibly returns a list with three elements. The first is an
+#' @param do_parallel Should the count sequence sampling be parallelized? The
+#'  'parallel' package will need to be installed.
+#' @param ncores Integer number of cores to use with parallelization. Default 
+#'  is NULL and one fewer than the total available cores will be used.
+#' @return Invisibly returns a list with two elements. The first is an
 #'  radiocarbon-dated event count ensemble, which is a matrix containing
 #'  probable count sequences where each column contains one probable sequence.
 #'  The second element is matrix containing frequencies of counts in each time
-#'  bin defined by breaks (used in the RECE heat map plot). The last element is
-#'  the breaks argument for convenience---it can be used to provide timestamps 
-#'  for the first two returned objects (corresponds to the rows in each case).
+#'  bin defined by breaks (used in the RECE heat map plot).
 #' @export
 
 rece <- function(c14_dates,
@@ -32,7 +35,9 @@ rece <- function(c14_dates,
             BP = TRUE,
             cal_resolution = -1,
             plot_it = TRUE,
-            time_axis_index = 100){
+            time_axis_index = 10,
+            do_parallel = FALSE,
+            ncores = NULL){
 
     # Calibrate the dates and build a matrix to hold the densities
     calibrated_dates <- chronup::build_c14_matrix(c14_dates,
@@ -50,12 +55,30 @@ rece <- function(c14_dates,
         message("Sampling count sequences...")
     }
 
-    event_count_samples <- pblapply(1:nsamples,
-        chronup::sample_event_counts,
-        chronun_matrix = calibrated_dates$chronun_matrix,
-        times = times,
-        breaks = breaks,
-        BP = BP)
+    if(do_parallel){
+        if(is.null(ncores)){
+            ncores <- parallel::detectCores() - 1
+        }
+        cl <- parallel::makeCluster(ncores)
+        parallel::clusterEvalQ(cl,{
+                            library(chronup)
+                            })
+        event_count_samples <- pblapply(cl = cl,
+            X = 1:nsamples,
+            FUN = chronup::sample_event_counts,
+            chronun_matrix = calibrated_dates$chronun_matrix,
+            times = times,
+            breaks = breaks,
+            BP = BP)
+        parallel::stopCluster(cl)
+    }else{
+        event_count_samples <- pblapply(1:nsamples,
+            chronup::sample_event_counts,
+            chronun_matrix = calibrated_dates$chronun_matrix,
+            times = times,
+            breaks = breaks,
+            BP = BP)
+    }
     event_count_samples <- as.matrix(do.call(cbind, 
                                     event_count_samples))
 
@@ -74,10 +97,11 @@ rece <- function(c14_dates,
     time_bins <- dim(RECE[, 2:max_count])[1]
     counts <- dim(RECE[, 2:max_count])[2]
 
+    t_delta <- mean(diff(breaks))
+    t_labels <- c(breaks - (t_delta / 2))[-1]
+
     # plotting
     if(plot_it){
-        t_delta <- abs(mean(diff(breaks)))
-        t_labels <- c(breaks - t_delta)[-1]
         image(x = 1:time_bins,
             y = 1:counts,
             z = RECE[, 2:max_count],
@@ -92,7 +116,11 @@ rece <- function(c14_dates,
         axis(1, at = axis_x_at, labels = t_labels[axis_x_at])
         axis(2, at = 1:counts)
     }
+
+    # add row/col names to the RECE for convenience
+    rownames(RECE) <- t_labels
+    colnames(RECE) <- 0:(ncol(RECE) - 1)
+
     return(invisible(list(count_ensemble = event_count_samples,
-                        RECE = RECE,
-                        breaks = breaks)))
+                        RECE = RECE))
 }

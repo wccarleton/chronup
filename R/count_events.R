@@ -21,7 +21,10 @@ count_events <- function(x,
         datum <- -datum
         x <- -x
     }
-    bins <- floor((x - datum) / abs(mean(diff(breaks)))) + 1
+    d <- abs(mean(diff(breaks)))
+    bins <- floor((x - datum) / d) + 1
     bins_trim <- bins[which(bins >= 1 & bins <= n)]
-    return(tabulate(bins_trim))
+    counts <- tabulate(bins_trim, 
+                        nbins = n)
+    return(counts)
 }

@@ -4,28 +4,22 @@
 \alias{count_events}
 \title{Count events.}
 \usage{
-count_events(x, breaks, BP = TRUE)
+count_events(x, breaks, BP)
 }
 \arguments{
 \item{x}{A numeric vector of event times to be counted.}
 
-\item{breaks}{A numeric vector of temporal bin edges passed at the \code{breaks}
-argument to graphics::hist. These edges need not define intervals at the
-same resolution as the \code{x} argument (e.g., event times can refer to years
-while the bins can refer to decades). But, keep in mind that the bins have
-to include all of the possible intervals into which events occurring at
-different times can fall. Also, the bin edges defined by this argument will
-serve as the right-most boundary condition which will be closed, i.e., the
-interval will be left-open and right-closed: ( ].}
+\item{breaks}{A numeric vector of temporal bin edges The bin edges defined
+by this argument will serve as the right-most boundary condition which will
+be closed, i.e., the interval will be left-open and right-closed: ( ].}
 
 \item{BP}{A logical argument specifying whether the events are on the BP
-(before present) timeline. If TRUE (default), the counts vector returned by
-graphics::hist is reversed to preserve a rightward/downward direction of
-time.}
+(before present) timeline.}
 }
 \value{
 A vector containing event counts.
 }
 \description{
-This is a wrapper for graphics::hist.
+Counts the number of events from 'x' that fall into time-bins defined by
+breaks.
 }

@@ -9,12 +9,14 @@ simulate_event_counts(
   times,
   nevents,
   nsamples,
+  interval = NULL,
   binning_resolution = -1,
   BP = T,
   c14 = T,
   chronun_matrix = NULL,
   new_times = NULL,
-  bigmatrix = T,
+  bigmatrix = NULL,
+  bigfileprefix = "count_ensemble",
   parallel = T
 )
 }
@@ -46,8 +48,13 @@ for a single event and the rows should each refer to discrete times. If c14
 \item{new_times}{A vector of times corresponding to the rows in the chronun
 matrix.}
 
-\item{bigmatrix}{A character vector containing a path pointing to a
-'bigmemory' matrix descriptor file, or NULL (default).}
+\item{bigmatrix}{A character vector containing a path pointing to folder for
+storing the bigmemory matrix descriptor file and matrix. Default is NULL,
+in which case it is assumed that a bigmatrix is not being used.}
+
+\item{bigfileprefix}{A character vector that will be used as a prefix for
+naming the bigmemory matrix descriptor file and matrix (*_desc and *_mat
+will be appended). Default is "count_ensemble"---not used if bigmatrix=NULL.}
 
 \item{parallel}{Logical (default = T). Use parallel (multiple processors) to
 speed up computation?}
@@ -58,7 +65,7 @@ or a file path pointing to a file-backed bigmatrix (an event count
 ensemble); 2) a dataframe containing the true (chronological-error-free)
 event-count sample; 3) a vector of time-stamps corresponding to the rows in
 the event count ensemble matrix; and 4) a vector of simulated uncalibrated
-radiocarbon dates (NULL is c14 == FALSE).
+radiocarbon dates (NULL if c14 == FALSE).
 }
 \description{
 Simulate event counts.
