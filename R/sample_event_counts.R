@@ -62,7 +62,10 @@ sample_event_counts <- function(
             m[,x] <- count_sample
             return()
         }else{
-            stop("The package 'bigmemory' is required when the 'bigmatrix' argument is not NULL. Install the package to make use of this option")
+            message <- paste("The package 'bigmemory' is required when the",
+                             "'bigmatrix' argument is not NULL.",
+                             "Install the package to make use of this option")
+            stop(message)
         }
     }else{
         return(count_sample)
