@@ -92,8 +92,8 @@ rece <- function(c14_dates,
     RECE[which(RECE == 0)] <- NA
 
     # dimensions (leaving out 0-counts)
-    time_bins <- dim(RECE)[1]#dim(RECE[, 2:max_count])[1]
-    counts <- dim(RECE)[2]#dim(RECE[, 2:max_count])[2]
+    time_bins <- dim(RECE[, 2:max_count])[1]
+    counts <- dim(RECE[, 2:max_count])[2]
 
     t_delta <- mean(diff(breaks))
     t_labels <- c(breaks - (t_delta / 2))[-1]
@@ -101,8 +101,8 @@ rece <- function(c14_dates,
     # plotting
     if(plot_it){
         image(x = 1:time_bins,
-            y = 0:(counts - 1),
-            z = log(RECE),
+            y = 1:(counts),
+            z = log(RECE[, 2:max_count]),
             useRaster = T,
             col = grDevices::hcl.colors(n = counts,
                                         palette = "inferno",
